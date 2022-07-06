@@ -1,3 +1,2 @@
-## Hi
-
-## List of scripts: 
+## Links to websites: 
+1. https://krytycznymokiem.blogspot.com/    
