@@ -5,7 +5,7 @@ import re
 import regex as re
 
 import time
-from tqdm import tqdm  #licznik
+from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -22,11 +22,9 @@ def krytycznym_okiem_web_scraping_sitemap():
  
     def get_article_pages(link):   
     
-        #link = links[0]
         html_text_sitemap = requests.get(link).text
         soup = BeautifulSoup(html_text_sitemap, 'lxml')
         sitemap_links = [e.text for e in soup.find_all('loc')]
-        #len( articles_links)
         articles_links.extend(sitemap_links)
         
     with ThreadPoolExecutor() as excecutor:
