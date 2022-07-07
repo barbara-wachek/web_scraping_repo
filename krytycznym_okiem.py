@@ -49,7 +49,7 @@ def krytycznym_okiem_web_scraping_sitemap():
         title_of_book = re.findall(r'[\"\„].*[\"\”](?=\s.*)', title_of_article)
         date_of_publication = soup.find('h2', class_='date-header').text
         texts_of_article = soup.find_all('div', class_='post-body entry-content')
-        tags = soup.find('span', class_='post-labels')     
+        tags = soup.find_all('span', class_='post-labels')     
         
         
         for element in texts_of_article:
@@ -69,7 +69,7 @@ def krytycznym_okiem_web_scraping_sitemap():
                 dictionary_of_article['Data wydania książki'] = re.findall(r'(?<=Data wydania:\s).*(?=\n)', article)[0]
                 dictionary_of_article['Wydawnictwo'] = re.findall(r'(?<=Wydawca:\s).*\s?.*?(?=\n|D)', article)[0].replace('\n', ' ').strip()
                 
-                dictionary_of_article['Tagi'] = tags.a.text
+                dictionary_of_article['Tagi'] = [tag.text.replace('Etykiety:', '').strip().replace('\n', ' ') for tag in tags][0]
                 
                 
             except AttributeError:
