@@ -7,7 +7,6 @@ import time
 from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 
-import locale
 
 from datetime import datetime
 from time import mktime
@@ -62,19 +61,6 @@ def czytam_centralnie_web_scraping_sitemap(link):
         tags_span = soup.find_all('span', class_='post-labels')
         tags = [tag.text for tag in tags_span][0].split()
         
-        #tags = soup.find_all('a', href=True)  #Kod CR nie działa, bo bierze linki do tagów z całej strony, a nie tylko spod artykułu
-        #tags = [x for x in soup.find_all('a', href=True) if 'Etykiety' in x.text]
-        #tags = soup.find_all('span', class_='post-labels')
-        #dictionary_of_article['Tagi'] = []
-        #for element in tags:
-            #dictionary_of_article['Tagi'].append(element.a.text)
-    
-        #for tag in tags: 
-            #dictionary_of_article['Tagi'] = tag.text
-            
-            #tags = soup.find_all('a', href=True)
-            #tags_span = soup.find_all('span', class_='post-labels')
-        
         
         for element in texts_of_article:
             try:
@@ -86,10 +72,11 @@ def czytam_centralnie_web_scraping_sitemap(link):
                 dictionary_of_article['Data publikacji'] = new_date
                
                 dictionary_of_article['Tekst artykułu'] = article
+                dictionary_of_article['Tagi'] = '| '.join(tags[1:]).replace(',', ' ')
                 
                 dictionary_of_article['Autor książki'] = re.findall(r'(?<=\p{Lu}\s\-\s)[\p{L}\-\s\.]*(?=\"|\„.*\"|\”)', title_of_article)[0].strip() 
                 dictionary_of_article['Tytuł książki'] = re.sub(r'([\p{Lu}\s0-9\.\,\-\'\!\(\)\"\„\”\=\?]*)(\s\-\s)([\p{L}\-\s\.\']*)([\"|\„].*[\"|\”]?)', r'\4', title_of_article)
-                dictionary_of_article['Tagi'] = '| '.join(tags[1:]).replace(',', ' ')
+                
                 
                 
             except AttributeError:
