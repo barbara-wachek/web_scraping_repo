@@ -147,9 +147,14 @@ def poeci_po_godzinach_web_scraping_sitemap(link):
     
    
     #Kod ignoruje linki, jęsli jest ich za duzo (nie mieszczą się w excelu) chyba trzeba będzie z tego zrezygnowac? albo zalozyc ze mamy niepelne dane
-    #albo po prostu odsyłać w tabeli do wersji z webarchive? 
+    #albo po prostu odsyłać w tabeli do wersji z webarchive? Póki co w kodzie sprawdzam tylko, czy są zdjęcia i wideo i zwracam odpowiednią informację (Tak - jesli sa)
    
     #CZESC DO OPRACOWANIA: (pobieranie wszystkich grafik z bloga do jednego folderu, w nazwie pliku ma być mozliwoć zlokalizowania na stronie) 
+    
+    
+    
+    
+    
     
     
     
