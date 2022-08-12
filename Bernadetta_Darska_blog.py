@@ -9,6 +9,7 @@ from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from time import mktime
+import json
 
 #%% def
 
@@ -104,7 +105,9 @@ all_results = []
 
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
-    
+
+with open(f'bernadetta_darska_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results, f)    
 
 df = pd.DataFrame(all_results)
 df.to_excel(f"bernadetta_darska_{datetime.today().date()}.xlsx", encoding='utf-8', index=False)   
