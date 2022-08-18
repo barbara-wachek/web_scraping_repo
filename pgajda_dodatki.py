@@ -1,24 +1,15 @@
+#%%import
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import re
-import regex as re
-import time
 from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 
 
 from datetime import datetime
-from time import mktime
 
 
-
-
-
-
-links_for_scraping = ['https://pgajda.blogspot.com/p/o-autorze.html', 'https://pgajda.blogspot.com/p/bibliografia.html', 'https://pgajda.blogspot.com/p/wycinki.html','https://pgajda.blogspot.com/p/rozmowy.html', 'https://pgajda.blogspot.com/p/recenzje.html', 'https://pgajda.blogspot.com/p/na-skroty.html', 'https://pgajda.blogspot.com/p/spotkania.html']
-
-
+#%% def
 def scraping_additional_pages(link):
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
@@ -57,6 +48,10 @@ def scraping_additional_pages(link):
 
     all_results.append(dictionary_of_sections)
       
+
+#%% main 
+
+links_for_scraping = ['https://pgajda.blogspot.com/p/o-autorze.html', 'https://pgajda.blogspot.com/p/bibliografia.html', 'https://pgajda.blogspot.com/p/wycinki.html','https://pgajda.blogspot.com/p/rozmowy.html', 'https://pgajda.blogspot.com/p/recenzje.html', 'https://pgajda.blogspot.com/p/na-skroty.html', 'https://pgajda.blogspot.com/p/spotkania.html']
       
 all_results = []
   
