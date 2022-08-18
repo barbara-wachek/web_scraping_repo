@@ -131,6 +131,9 @@ with open(f'pgajda_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     
     
 df = pd.DataFrame(all_results)
+df = df.drop_duplicates()
+df["Data publikacji"] = pd.to_datetime(df["Data publikacji"])
+df = df.sort_values('Data publikacji', ascending=False)
 df.to_excel(f"pgajda_{datetime.today().date()}.xlsx", encoding='utf-8', index=False)   
     
     

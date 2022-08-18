@@ -94,6 +94,10 @@ def dictionary_of_article(article_link):
         
     
         try:
+            
+            links_in_article = [x['href'] for x in element.find_all('a')]
+            dictionary_of_article['Linki_zewnętrzne'] = ' | '.join([x for x in links_in_article if not re.findall(r'blogspot|jpg', x)])
+            
             list_of_images = [x['src'] for x in element.find_all('img')]
             if list_of_images != []:
                 dictionary_of_article['Zdjęcia/Grafika'] = 'TAK'
@@ -107,7 +111,9 @@ def dictionary_of_article(article_link):
         except AttributeError:
             pass 
         except IndexError:   
-            pass   
+            pass 
+        except KeyError:
+            pass
         
         
         try:
@@ -144,6 +150,9 @@ with open(f'poeci_po_godzinach_{datetime.today().date()}.json', 'w', encoding='u
     
     
 df = pd.DataFrame(all_results)
+df = df.drop_duplicates()
+df["Data publikacji"] = pd.to_datetime(df["Data publikacji"])
+df = df.sort_values('Data publikacji', ascending=False)
 df.to_excel(f"poeci_po_godzinach_{datetime.today().date()}.xlsx", encoding='utf-8', index=False)   
        
         
