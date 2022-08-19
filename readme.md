@@ -8,4 +8,5 @@
 7. https://pgajda.blogspot.com/
 8. https://bialafabryka.blogspot.com/
 9. http://bezprzeginania.blogspot.com/
-10. https://komnen-kastamonu.blogspot.com/ 
+10. https://komnen-kastamonu.blogspot.com/
+11. http://intimathule.blogspot.com/
