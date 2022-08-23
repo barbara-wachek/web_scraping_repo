@@ -31,7 +31,6 @@ def get_extras_pages(link):
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
     extras = [e.text for e in soup.find_all('loc') if re.findall(r'pt\-page-', link)]
     extras_links.extend(extras)
-    
 
 def dictionary_of_article(article_link):
     html_text = requests.get(article_link).text
@@ -43,7 +42,6 @@ def dictionary_of_article(article_link):
     dictionary_of_article = {}
     
     #DATA
-    
     date_of_publication = soup.find('span', class_="post-time").text
     date = re.sub(r'(.*\s)(\d{1,2}\s)(.*)(\s\d{4})(\—\s[\w]*\s[\w]*\s[\w]*)', r'\2\3\4', date_of_publication).strip()
    
@@ -60,12 +58,10 @@ def dictionary_of_article(article_link):
         texts_of_article = soup.find_all('div', class_='e-content entry-content')
         title_of_article = soup.find('h1', class_='p-name entry-title').text
         
-  
     except AttributeError:
         pass 
     except IndexError:   
         pass
-        
     
     for element in texts_of_article:
         try:
@@ -76,7 +72,7 @@ def dictionary_of_article(article_link):
             dictionary_of_article['Autor'] = author
             dictionary_of_article['Tytuł artykułu'] = title_of_article
             dictionary_of_article['Tekst artykułu'] = article
-        
+            
         except AttributeError:
             pass 
         except IndexError:   
@@ -84,7 +80,6 @@ def dictionary_of_article(article_link):
         
     
         try:
-            
             links_in_article = [x['href'] for x in element.find_all('a')]
             dictionary_of_article['Linki zewnętrzne'] = ' | '.join([x for x in links_in_article if not re.findall(r'blogspot|jpg', x)])
             
@@ -141,23 +136,18 @@ def extras_content(extras_link):
     extras_results.append(dictionary_of_extras)   
 
 #%%main
-
-
 sitemap_links = jerzy_sosnowski_web_scraping('https://jerzysosnowski.pl/sitemap.xml')[0]
 extras_links_sitemap = jerzy_sosnowski_web_scraping('https://jerzysosnowski.pl/sitemap.xml')[1]
 
 articles_links = []
-
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_article_pages, sitemap_links),total=len(sitemap_links)))
 
 extras_links = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_extras_pages, extras_links_sitemap),total=len(extras_links_sitemap)))
-
    
 all_results = [] 
-
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
@@ -165,19 +155,15 @@ extras_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(extras_content, extras_links),total=len(extras_links)))
     
-    
 with open(f'jerzy_sosnowski_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f) 
 with open(f'jerzy_sosnowski_extras_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(extras_results, f)             
     
-    
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"])
 df = df.sort_values('Data publikacji', ascending=False)
-
 df_extras = pd.DataFrame(extras_results).drop_duplicates()
-
 
 with pd.ExcelWriter(f"jerzy_sosnowski_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
