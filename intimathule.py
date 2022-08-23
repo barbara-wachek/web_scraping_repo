@@ -104,8 +104,7 @@ with ThreadPoolExecutor() as excecutor:
 with open(f'intimathule_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f)        
 
-df = pd.DataFrame(all_results)
-df = df.drop_duplicates()
+df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"])
 df = df.sort_values('Data publikacji', ascending=False)
 df.to_excel(f"intimathule_{datetime.today().date()}.xlsx", index=False)   
