@@ -11,3 +11,4 @@
 10. https://komnen-kastamonu.blogspot.com/
 11. http://intimathule.blogspot.com/
 12. https://jerzysosnowski.pl/
+13. http://www.afiszteatralny.pl/
