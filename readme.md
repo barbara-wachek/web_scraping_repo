@@ -12,3 +12,4 @@
 11. http://intimathule.blogspot.com/
 12. https://jerzysosnowski.pl/
 13. http://www.afiszteatralny.pl/
+14. https://afront.org.pl/
