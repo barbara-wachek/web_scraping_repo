@@ -12,13 +12,8 @@ import json
 import functions as fun
 
 
-#%%def
-def afront_web_scraping_sitemap_posts(sitemap):
-    html_text_sitemap = requests.get(sitemap).text
-    soup = BeautifulSoup(html_text_sitemap, 'lxml')
-    links_posts = [e.text for e in soup.find_all('loc')]
-    return links_posts  
 
+#%%def
 def afront_web_scraping_sitemap_pages(link): 
     html_text_sitemap = requests.get(link).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
@@ -32,23 +27,15 @@ def dictionary_of_article(article_link):
         html_text = requests.get(article_link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
-    dictionary_of_article = {}
-
-    try: 
-        date_of_publication = soup.find('time', class_= re.compile(r"entry-date")).text
-        new_date = fun.date_change_format_short(date_of_publication)
-        text_of_article = soup.find('div', class_='entry-content single-content')
-        article = text_of_article.text.strip().replace('\n', ' ').replace('\xa0', ' ')
-        author = " | ".join([x.text for x in text_of_article.find_all('p', attrs={'style':'text-align: right;'})])
-        title_of_article = soup.find('h1', class_='entry-title').text
-        tags = ''.join([x.text.replace('\n','').strip() for x in soup.find_all('span', class_='category-links term-links category-style-normal')])
-        
-    except AttributeError:
-        pass
-    except KeyError:
-        pass
-    except IndexError:   
-        pass    
+    date_of_publication = soup.find('time', class_= re.compile(r"entry-date")).text
+    new_date = fun.date_change_format_short(date_of_publication)
+    text_of_article = soup.find('div', class_='entry-content single-content')
+    article = text_of_article.text.strip().replace('\n', ' ').replace('\xa0', ' ')
+    author = " | ".join([x.text for x in text_of_article.find_all('p', attrs={'style':'text-align: right;'})])
+    title_of_article = soup.find('h1', class_='entry-title').text
+    tags = ''.join([x.text.replace('\n','').strip() for x in soup.find_all('span', class_='category-links term-links category-style-normal')])
+    
+    dictionary_of_article = {}   
 
     try:
         dictionary_of_article['Link'] = article_link
@@ -104,7 +91,7 @@ def extras_content_authors(notes_about_authors):
 
 
 #%%main 
-articles_links = afront_web_scraping_sitemap_posts('https://afront.org.pl/wp-sitemap-posts-post-1.xml')
+articles_links = fun.get_links('https://afront.org.pl/wp-sitemap-posts-post-1.xml')
 extras_pages_links = afront_web_scraping_sitemap_pages('https://afront.org.pl/wp-sitemap-posts-page-1.xml')
 
 all_results = [] 
