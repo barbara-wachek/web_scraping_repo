@@ -1,5 +1,4 @@
 #%% import
-
 from __future__ import unicode_literals
 import regex as re
 import time
@@ -35,10 +34,11 @@ def date_change_format_long(date_of_publication):
     new_date = format(changed_date.date())
     return new_date
 
-
 #Funkcja do scrapowania linków z podanej strony sitemap
 def get_links(sitemap_link):
     html_text = requests.get(sitemap_link).text
     soup = BeautifulSoup(html_text, 'lxml')
     links = [e.text for e in soup.find_all('loc')]
     return links
+
+

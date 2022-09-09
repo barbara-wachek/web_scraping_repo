@@ -9,9 +9,9 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
-import functions as fun
-
-
+from functions import date_change_format_short, get_links
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
 #%%def
 def afront_web_scraping_sitemap_pages(link): 
@@ -28,45 +28,34 @@ def dictionary_of_article(article_link):
     soup = BeautifulSoup(html_text, 'lxml')
     
     date_of_publication = soup.find('time', class_= re.compile(r"entry-date")).text
-    new_date = fun.date_change_format_short(date_of_publication)
+    new_date = date_change_format_short(date_of_publication)
     text_of_article = soup.find('div', class_='entry-content single-content')
     article = text_of_article.text.strip().replace('\n', ' ').replace('\xa0', ' ')
     author = " | ".join([x.text for x in text_of_article.find_all('p', attrs={'style':'text-align: right;'})])
     title_of_article = soup.find('h1', class_='entry-title').text
     tags = ''.join([x.text.replace('\n','').strip() for x in soup.find_all('span', class_='category-links term-links category-style-normal')])
-    
-    dictionary_of_article = {}   
-
     try:
-        dictionary_of_article['Link'] = article_link
-        dictionary_of_article['Data publikacji'] = new_date
-        dictionary_of_article['Tytuł artykułu'] = title_of_article.replace('\xa0', ' ')
-        dictionary_of_article['Tekst artykułu'] = article
-        dictionary_of_article['Autor'] = author
-        dictionary_of_article['Tagi'] = tags
+        external_links = ' | '.join([x for x in [x['href'] for x in text_of_article.find_all('a')] if not re.findall(r'afront\.org', x)])
+    except (AttributeError, KeyError, IndexError):
+        external_links = None
         
-        links_in_article = [x['href'] for x in text_of_article.find_all('a')]
-        dictionary_of_article['Linki zewnętrzne'] = ' | '.join([x for x in links_in_article if not re.findall(r'afront\.org', x)])
-        
-        list_of_images = [x['src'] for x in text_of_article.find_all('img')]
-        if list_of_images != []:
-            dictionary_of_article['Zdjęcia/Grafika'] = 'TAK'
-            
-        list_of_video = [x['src'] for x in text_of_article.find_all('iframe')]
-        if list_of_video != []:
-            dictionary_of_article['Filmy'] = 'TAK'
-            
-        links_of_images = [x['src'] for x in text_of_article.find_all('img')]
-        dictionary_of_article['Linki do zdjęć'] = ' | '.join(links_of_images[1:])   
-            
-    except AttributeError:
-        pass
-    except KeyError:
-        pass
-    except IndexError:   
-        pass
+    try: 
+        photos_links = ' | '.join([x['src'] for x in text_of_article.find_all('img')][1:])  
+    except (AttributeError, KeyError, IndexError):
+        photos_links = None
     
-
+    dictionary_of_article = {"Link": article_link, 
+                             "Data publikacji": new_date,
+                             "Tytuł artykułu": title_of_article.replace('\xa0', ' '),
+                             "Tekst artykułu": article,
+                             "Autor": author,
+                             "Tagi": tags,
+                             'Linki zewnętrzne': external_links,
+                             'Zdjęcia/Grafika': True if [x['src'] for x in text_of_article.find_all('img')] else False,
+                             'Filmy': True if [x['src'] for x in text_of_article.find_all('iframe')] else False,
+                             'Linki do zdjęć': photos_links
+                             }
+    
     all_results.append(dictionary_of_article)    
     
         
@@ -91,7 +80,7 @@ def extras_content_authors(notes_about_authors):
 
 
 #%%main 
-articles_links = fun.get_links('https://afront.org.pl/wp-sitemap-posts-post-1.xml')
+articles_links = get_links('https://afront.org.pl/wp-sitemap-posts-post-1.xml')
 extras_pages_links = afront_web_scraping_sitemap_pages('https://afront.org.pl/wp-sitemap-posts-page-1.xml')
 
 all_results = [] 
@@ -107,23 +96,46 @@ with open(f'afront_extras_biograms_{datetime.today().date()}.json', 'w', encodin
     json.dump(biograms, f)             
     
 df = pd.DataFrame(all_results).drop_duplicates()
-df["Data publikacji"] = pd.to_datetime(df["Data publikacji"])
+df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
+
 df_extras_authors = pd.DataFrame(biograms)
 df_extras_all_pages = pd.DataFrame(extras_pages_links)
 
 
-with pd.ExcelWriter(f"afront_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+with pd.ExcelWriter(f"afront_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
     df_extras_authors.to_excel(writer, 'Biograms', index=False, encoding='utf-8')   
     df_extras_all_pages.to_excel(writer, 'Subpages', index=False, encoding='utf-8')  
     writer.save()    
+
+
+#%%Uploading files on Google Drive
+
+gauth = GoogleAuth()           
+drive = GoogleDrive(gauth)   
+      
+upload_file_list = [f"afront_{datetime.today().date()}.xlsx", f'afront_{datetime.today().date()}.json', f'afront_extras_biograms_{datetime.today().date()}.json']
+for upload_file in upload_file_list:
+	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+	gfile.SetContentFile(upload_file)
+	gfile.Upload()  
+
+
+
+#Naprawić kod 
+    
+#Nie zapisywac w excelu - skoro gubia sie dane
+#jak zachowac tabele, zeby miec dostep do pelnych linkow
+#przepisać wszystkie funkcje zgodnie z tymi wytycznymi 
+#trudny serwis = Andrzej Pilipiuk    
     
     
-    
-    
-    
-    
+#limit słów w komorce Excela = 32 767 characters
+#limit słów w komórce Google Sheet = 50 000 characters   
+
+#jako rozwiązanie dodałam atrybut w pd.ExcelWriter - options={'strings_to_urls': False} zgodnie z tą radą: 
+    #https://stackoverflow.com/questions/35440528/how-to-save-in-xlsx-long-url-in-cell-using-pandas 
     
     
     

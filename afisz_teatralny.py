@@ -9,6 +9,8 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
 
 #%%def
@@ -32,71 +34,45 @@ def dictionary_of_article(article_link):
         html_text = requests.get(article_link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
-    dictionary_of_article = {}
     date_of_publication = re.sub(r'(http:\/\/www\.afiszteatralny\.pl\/)(\d{4})(\/)(\d{2})(\/[\w\.\-]*)', r'\2-\4', article_link)
+    text_of_article = soup.find('div', class_='post-entry')
+    title_of_article = soup.find('div', class_='post-header').h1.text.strip()
+    tags = " ".join([x.text.replace("\n", " ").strip() for x in soup.find_all('div', class_='entry-tags gray-2-secondary')]).replace('Tags:', '').replace(',', ' |')
+    article = text_of_article.text.strip().replace('\n', '')
+    
+    if re.findall(r'\sreż\.',title_of_article) != []:
+        director = re.sub(r'(.*)(\sreż\.)(.*)', r'\3', title_of_article).strip() 
+        spectacle = re.sub(r'(.*)(\,\sreż\.)(.*)', r'\1', title_of_article)
+    else:
+        director = None
+        spectacle = None
     
     try:
-        texts_of_article = soup.find_all('div', class_='post-entry')
-        title_of_article = soup.find('div', class_='post-header').h1.text.strip()
-        tags = " ".join([x.text.replace("\n", " ").strip() for x in soup.find_all('div', class_='entry-tags gray-2-secondary')])
-        
-    except AttributeError:
-        pass 
-    except IndexError:   
-        pass
-    
-    for element in texts_of_article:
-        try:
-            article = element.text.strip()
-           
-            dictionary_of_article['Link'] = article_link
-            dictionary_of_article['Data publikacji'] = date_of_publication  #brak dziennej daty dlatego nie mogę później zamienić na format datetime
-            dictionary_of_article['Autor'] = 'Agnieszka Kobroń' #sprawdzic, czy kazdy post jej jej autorstwa
-            dictionary_of_article['Tytuł artykułu'] = title_of_article
-            dictionary_of_article['Tekst artykułu'] = article
-            
-            tagi = re.sub(r'(Tags\:\s)(.*)', r'\2', tags).replace(",", " |")
-            dictionary_of_article['Tagi'] = tagi.replace("Tags:", "")  #Można by ewentualnie popracować na wyjęciem z tagów nazw teatrów
-            
-            if re.search(r'reż.', title_of_article):
-                dictionary_of_article['Tytuł spektaklu'] = re.sub(r'(.*)(\,\sreż\.)(.*)', r'\1', title_of_article)
-                dictionary_of_article['Reżyser'] = re.sub(r'(.*)(\sreż\.)(.*)', r'\3', title_of_article).strip()
-             
-        except AttributeError:
-            pass 
-        except IndexError:   
-            pass
-        
-        try:
-            links_in_article = [x['href'] for x in element.find_all('a')]
-            dictionary_of_article['Linki zewnętrzne'] = ' | '.join([x for x in links_in_article if not re.findall(r'blogspot|jpg', x)])
-            
-            list_of_images = [x['src'] for x in element.find_all('img')]
-            if list_of_images != []:
-                dictionary_of_article['Zdjęcia/Grafika'] = 'TAK'
-                
-            list_of_video = [x['src'] for x in element.find_all('iframe')]
-            if list_of_video != []:
-                dictionary_of_article['Filmy'] = 'TAK'
-                
-        except AttributeError:
-            pass 
-        except IndexError:   
-            pass 
-        except KeyError:
-            pass
+        external_links = ' | '.join([x for x in [x['href'] for x in text_of_article.find_all('a')] if not re.findall(r'blogspot|jpg|blogger|afiszteatralny', x)])
+    except (AttributeError, KeyError, IndexError):
+        external_links = None
+      
+    try: 
+        photos_links = ' | '.join([x['src'] for x in text_of_article.find_all('img')])  
+    except (AttributeError, KeyError, IndexError):
+        photos_links = None   
         
         
-        try:
-            links_of_images = [x['src'] for x in element.find_all('img')]
-            dictionary_of_article['Linki do zdjęć'] = ' | '.join(links_of_images)
-                    
-        except AttributeError:
-            pass 
-        except IndexError:   
-            pass        
+    dictionary_of_article = {'Link' : article_link,
+                             'Data publikacji': date_of_publication,
+                             'Autor': 'Agnieszka Kobroń',
+                             'Tagi': tags if tags != '' else None,
+                             'Tytuł artykułu': title_of_article,
+                             'Tekst artykułu': article,
+                             'Tytuł spektaklu': spectacle,
+                             'Reżyser': director,
+                             'Linki zewnętrzne': external_links,
+                             'Zdjęcia/Grafika': True if [x['src'] for x in text_of_article.find_all('img')] else False,
+                             'Filmy': True if [x['src'] for x in text_of_article.find_all('iframe')] else False,
+                             'Linki do zdjęć': photos_links}    
+     
 
-        all_results.append(dictionary_of_article)    
+    all_results.append(dictionary_of_article)    
 
 
 
@@ -114,25 +90,28 @@ with ThreadPoolExecutor() as excecutor:
     
 with open(f'afisz_teatralny_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f)     
-    
-    
+
 df = pd.DataFrame(all_results).drop_duplicates()
 df = df.sort_values('Data publikacji', ascending=False)
 
-with pd.ExcelWriter(f"afisz_teatralny_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+path = f"afisz_teatralny_{datetime.today().date()}.xlsx"
+
+with pd.ExcelWriter(path, engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df.to_excel(writer, 'Posts', index=False, encoding='utf-8')    
     writer.save()       
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+#%%Uploading files on Google Drive
+
+gauth = GoogleAuth()           
+drive = GoogleDrive(gauth)   
+      
+upload_file_list = [f"afisz_teatralny_{datetime.today().date()}.xlsx", f'afisz_teatralny_{datetime.today().date()}.json']
+for upload_file in upload_file_list:
+	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+	gfile.SetContentFile(upload_file)
+	gfile.Upload()  
     
     
     
