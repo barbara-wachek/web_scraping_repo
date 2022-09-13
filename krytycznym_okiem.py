@@ -70,7 +70,7 @@ def dictionary_of_article(article_link):
         publisher = None
         
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in text_of_article.find_all('a')] if not re.findall(r'blogger|blogspot|komnen', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in text_of_article.find_all('a')] if not re.findall(r'blogger|blogspot|krytycznymokiem', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
          
