@@ -15,7 +15,7 @@ from pydrive.drive import GoogleDrive
 
 
 #%%def
-def poeci_po_godzinach_web_scraping_sitemap(sitemap):
+def intimathule_web_scraping_sitemap(sitemap):
     html_text_sitemap = requests.get(sitemap).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
     links = [e.text for e in soup.find_all('loc')]
@@ -62,7 +62,7 @@ def dictionary_of_article(article_link):
     
 #%% main
     
-articles_links = poeci_po_godzinach_web_scraping_sitemap('https://intimathule.blogspot.com/sitemap.xml')
+articles_links = intimathule_web_scraping_sitemap('https://intimathule.blogspot.com/sitemap.xml')
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
