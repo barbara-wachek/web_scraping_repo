@@ -28,7 +28,6 @@ def get_article_pages(link):
     articles_links.extend(sitemap_links) 
 
 def dictionary_of_article(article_link):
-    #article_link = 'https://pgajda.blogspot.com/2022/09/co-jest-mi-milsze.html'
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)

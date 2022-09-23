@@ -94,6 +94,7 @@ with open(f'afisz_teatralny_{datetime.today().date()}.json', 'w', encoding='utf-
 df = pd.DataFrame(all_results).drop_duplicates()
 df = df.sort_values('Data publikacji', ascending=False)
 
+
 path = f"afisz_teatralny_{datetime.today().date()}.xlsx"
 
 with pd.ExcelWriter(path, engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
