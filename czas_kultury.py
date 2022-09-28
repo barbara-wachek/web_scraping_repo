@@ -6,25 +6,14 @@ import pandas as pd
 import regex as re
 import time
 from time import mktime
-from tqdm import tqdm  #licznik
+from tqdm import tqdm 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
-#%%
-
-# link = 'https://czaskultury.pl/archiwum-tekstow/' == 'https://czaskultury.pl/archiwum-tekstow/page/1/'
-
-# https://czaskultury.pl/wydarzenia/
-# https://czaskultury.pl/reading-book-sitemap.xml #?
-# https://czaskultury.pl/reading-book-sitemap2.xml
-
-# https://czaskultury.pl/feuilleton-sitemap.xml
-
-# sitemap = 'https://czaskultury.pl/sitemap_index.xml'
-
+#%%def
 
 def number_of_pages_in_archive_of_texts(link):
     html_text = requests.get(link).text
@@ -42,11 +31,10 @@ def czas_kultury_web_scraping_links_from_archive(link_of_archive_page):
     html_text = requests.get(link_of_archive_page).text
     soup = BeautifulSoup(html_text, 'lxml')
     links = [e.a['href'] for e in soup.find_all('div', class_='post-box-component')]
-    all_archive_links.extend(links)
-    return all_archive_links
+    all_archive_texts_links.extend(links)
+    return all_archive_texts_links
 
 def links_of_archive_years(link):
-    link = 'https://czaskultury.pl/archiwum-numerow/'
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text)
     links = [x['href'] for x in soup.find_all('a', class_='font-weight-normal h3')]
@@ -67,15 +55,29 @@ def dictionary_of_article(link):
     #link = 'https://czaskultury.pl/czytanki/kara-walker-i-prawo-do-mowienia/'
     #link = 'https://czaskultury.pl/czytanki/przez-ucho-do-plocka/'
     #link = 'https://czaskultury.pl/czytanki/przestrzen-teatralna-w-pradze/'
-    html_text = requests.get(link).text
+    
+    
 # html_collect = []
-# for link in tqdm(all_links):
-#     #all_links[100] = link
+# for link in tqdm(all_articles_links):
+#     #all_articles_links[100] = link
 #     html_text = str(requests.get(link).status_code)
 #     html_collect.append(html_text)
-  
+    
+    #html_collect_series = pd.Series(html_collect)
+    #html_collect_series.value_counts()
+    
+    # try:
+    #    html_text = requests.get(link, timeout=5).text
+    #    soup = BeautifulSoup(html_text, 'lxml')
+    # except ConnectionError as e:   
+    #    print(e)
+    #    r = "No response"
+all_results = []   
+for link in tqdm(all_articles_links):  
+    #link = 'https://czaskultury.pl/artykul/berlinale2021-zwrot-w-strone-kina-niezaleznego/'
+    html_text = requests.get(link).text
     while 'Error 503' in html_text:
-        time.sleep(2)
+        time.sleep(5)
         html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
@@ -104,12 +106,18 @@ def dictionary_of_article(link):
         result = time.strptime(date_of_publication, "%d %m %Y")
         changed_date = datetime.fromtimestamp(mktime(result))   
         new_date = format(changed_date.date())
+        
     
     content_of_article = soup.find('div', class_='row align-items-start')
     text_of_article = soup.find('div', class_='paragraph fs-16').text.replace('\xa0', ' ').replace('\n', ' ').strip()
     title_of_article = soup.find('h1', class_='mb-0').text.strip().replace('\xa0', ' ')
     author = ' | '.join([x.span.text for x in soup.find_all('div', class_='post-box-component__authors separated-comma my-1')])
- 
+    
+    try:
+        tags = " | ".join([x.span.text for x in content_of_article.find_all('div', class_='post-box-component__categories d-flex flex-wrap separated-line')])
+    except (AttributeError, KeyError, IndexError):
+        tags = None
+        
     try:
         additional_info = '| '.join([x.text.replace('\r\n', " | ").replace('\n', " ") for x in soup.find_all('p', class_='h3')])
     except (AttributeError, KeyError, IndexError):
@@ -133,6 +141,7 @@ def dictionary_of_article(link):
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Numer/rok czasopisma': year_and_issue if new_date == None else None,
+                             'Tagi': tags,
                              'Dodatkowe informacje': additional_info,
                              'Linki zewnętrzne': external_links,
                              'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img') if not re.findall(r'(bookmark)|(email)|(twitter)|(facebook)', x['src'])] else False,
@@ -153,7 +162,7 @@ links_of_archive_pages = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(czas_kultury_get_links_from_archive, range(1, int(number_of_pages_in_archive_of_texts)+1)), total=len(range(1, int(number_of_pages_in_archive_of_texts)+1))))
 
-all_archive_links = []  
+all_archive_texts_links = []  
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(czas_kultury_web_scraping_links_from_archive, links_of_archive_pages), total=len(links_of_archive_pages)))
 
@@ -166,38 +175,43 @@ all_articles_from_archive = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(czas_kultury_get_links_from_article_archive, links_of_archive_years), total=len(links_of_archive_years)))
     
-#Wywalenie ewentualnych duplikatów z listy linków z archiwum artykułów:
+#Wyrzucenie ewentualnych duplikatów z listy linków z archiwum artykułów:
 all_articles_from_archive = list(set(all_articles_from_archive))
 
-#Wywalenie ewentualnych duplikatów z listy linków z archiwum artykułów:
-all_archive_links = list(set(all_archive_links))   
+#Wyrzucenie ewentualnych duplikatów z listy linków z archiwum artykułów:
+all_archive_texts_links = list(set(all_archive_texts_links))   
 
 
 #Dodanie obu list, aby otrzymać listę wszystkich linków ze strony: 
-all_articles_links = all_archive_links + all_articles_from_archive
+all_articles_links = all_archive_texts_links + all_articles_from_archive
+
+#Sprawdzenie, czy nie ma duplikatów:     
+len(all_articles_links) == len(set(all_articles_links))
+  
+
+#Scrapowanie artykułów z listy linków (Trzeba przez listę, bo zwraca ConnectionError)
+
+# all_results = []
+# with ThreadPoolExecutor() as excecutor:
+#     list(tqdm(excecutor.map(dictionary_of_article, all_articles_links),total=len(all_articles_links)))   
 
 
-#Scrapowanie artykułów z listy linków
-
-all_results = []
-with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(dictionary_of_article, all_articles_links),total=len(all_articles_links)))   
-
-
+#Jeden plik json wspólny dla Archiwum tekstów i Archiwum numerów:
 with open(f'czas_kultury_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f) 
+
 
 df = pd.DataFrame(all_results).drop_duplicates()
 
 #Zrobic dwa osobne df dla Archiwum tekstów i Archiwum numerów - tam gdzie nie ma daty to ARchiwum numerów i potem zapisać je w osobnych arkuszach Excela
 df_archiwum_tekstow = df[df['Data publikacji'].notna()]
-df_archiwum_tekstow["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
-df_archiwum_tekstow  = df.sort_values('Data publikacji', ascending=False)
+df_archiwum_tekstow  = df_archiwum_tekstow.sort_values('Data publikacji', ascending=False)
 
 
 df_archiwum_numerow = df[df['Data publikacji'].isna()]
+#df_archiwum_numerow['Numer/rok czasopisma'].unique()
 
-
+#df_archiwum_tekstow['Numer/rok czasopisma'].isna().value_counts()
 #Uzupełnienie raportu
 #report = ScrapingReport('https://www.pilipiuk.com', len(df), df['Data publikacji'].iloc[0])    
 #report.create_scraping_report()
@@ -205,22 +219,27 @@ df_archiwum_numerow = df[df['Data publikacji'].isna()]
 
 with pd.ExcelWriter(f"czas_kultury_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df_archiwum_numerow.to_excel(writer, 'Archiwum numerów', index=False, encoding='utf-8')   
-    df_archiwum_tekstow.to_excel(writer, 'Archiwum tekstów' index=False, encoding='utf-8')
+    df_archiwum_tekstow.to_excel(writer, 'Archiwum tekstów', index=False, encoding='utf-8')
     writer.save()  
 
 
 
 
-#Dodać opcję sortowania w archiwum numerów po numerze - czyli ujednolicić zapis 
-#wywalić takie rzeczy https://czaskultury.pl/czytanki/kara-walker-i-prawo-do-mowienia/ (ma inny format daty)
-#https://czaskultury.pl/czytanki/przestrzen-teatralna-w-pradze/
-#https://czaskultury.pl/czytanki/dystopia-z-osmiornica-w-tle/
-#https://czaskultury.pl/czytanki/tanczcie-inaczej-jestesmy-zgubieni/
-#https://czaskultury.pl/czytanki/przez-ucho-do-plocka/
+#%%Uploading files on Google Drive
+
+gauth = GoogleAuth()           
+drive = GoogleDrive(gauth)   
+      
+upload_file_list = [f"czas_kultury_{datetime.today().date()}.xlsx", f'czas_kultury_{datetime.today().date()}.json']
+for upload_file in upload_file_list:
+	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+	gfile.SetContentFile(upload_file)
+	gfile.Upload()  
 
 
 
 
+#Usunąć z linków zew. jakies dziwne linki 
 
 
 
