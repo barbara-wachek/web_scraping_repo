@@ -46,8 +46,8 @@ def czas_kultury_get_links_from_article_archive(link):
     all_articles = [x.a['href'] for x in soup.find_all('div', class_="post-box-component")]
     all_articles_from_archive.extend(all_articles)
     return all_articles_from_archive
-
-def dictionary_of_article(link):
+#%% For loop
+#def dictionary_of_article(link):
     #link = 'https://czaskultury.pl/artykul/pijesz-ty-pije-ja/' #archiwum numerów
     #link = 'https://czaskultury.pl/felietony/sacrum-w-niewoli/' #archiwum tekstów
     #link = 'https://czaskultury.pl/artykul/szalenstwo-pszczol/' #archiwum numeró♥w

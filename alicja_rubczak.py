@@ -13,12 +13,6 @@ import json
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
-
-
-link = 'https://alicjarubczak.wordpress.com/2009/'
-
-#Scrapować po latach - podmieniac rok i w ten sposób tworzyć listę linków za dany rok. Blog wystartował w 2009 roku 
-
 #%% def
 
 def get_links_of_years(digit_from_range):

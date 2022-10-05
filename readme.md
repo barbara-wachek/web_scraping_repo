@@ -17,3 +17,4 @@
 16. https://www.pilipiuk.com/
 17. https://czaskultury.pl/
 18. https://alicjarubczak.wordpress.com/
+19. http://artpapier.com/
