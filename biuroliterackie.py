@@ -171,7 +171,75 @@ def dictionary_of_article(link):
 
 
     all_results.append(dictionary_of_article)
+
+def dictionary_of_article_from_biuletyn(link):
+    link = 'https://www.biuroliterackie.pl/biuletyn/nowe-glosy-europy-zoran-pilic/' #biuletyn
+    #link = 'https://www.biuroliterackie.pl/biuletyn/bronka-nowicka-podrozy/' #biuletyn
+    #link = 'https://www.biuroliterackie.pl/biuletyn/biblioteka-nr-16/' #biblioteka nr x
+    
+    html_text = requests.get(link).content
+    soup = BeautifulSoup(html_text, 'lxml')
+    
+    section = re.sub(r'(https:\/\/www\.biuroliterackie\.pl\/)(biblioteka|biuletyn|ksiazki|projekty)(\/)(.*)', r'\2', link)     
+    category = soup.find('span', class_='data_cat').text.strip()
+    
+    date_of_publication = soup.find('span', class_='data_data').text
+    result = time.strptime(date_of_publication.strip(), "%d/%m/%Y")
+    changed_date = datetime.fromtimestamp(mktime(result))   
+    new_date = changed_date.date().strftime("%Y-%m-%d")
+    
+    title_of_article = soup.find('h1', class_='biuletyn_title')
+    if title_of_article:
+        title_of_article = title_of_article.text.strip()
    
+    content_of_article = soup.find('main', class_='site-main')
+    try:
+        text_of_article = " ".join([x.text for x in content_of_article.find('div', class_='biuletyn___post-content').findChildren('p', recursive=False) if x.text and x.text != '\xa0'])
+    except AttributeError:
+        text_of_article = None
+     
+    try:
+        external_links = ' | '.join([x for x in [x.get('href') for x in content_of_article.find_all('a') if x.get('href') != None] if not re.findall(r'biuroliterackie|images|mail|#', x)])
+    except (AttributeError, KeyError, IndexError):
+        external_links = None
+
+    try:
+        series_link = soup.find('span', class_='kategoria_debaty').a['href']
+        series_name = soup.find('span', class_='kategoria_debaty').text.strip()
+    except (AttributeError, KeyError, IndexError):
+        series_link = None
+        series_name = None
+        
+    try: 
+        photos_links = ' | '.join([x['src'] for x in content_of_article.find_all('img')])  
+    except (AttributeError, KeyError, IndexError):
+        photos_links = None
+        
+    try: 
+        program_link = [e for e in [x['href'] for x in content_of_article.find_all('a')] if '.mp3' in e][0]
+    except (AttributeError, KeyError, IndexError):
+        program_link = None 
+        
+        
+    dictionary_of_article = {'Link': link,
+                             'Data publikacji': new_date,
+                             'Sekcja': section,
+                             'Kategoria': category,
+                             'Tytuł artykułu': title_of_article,
+                             'Tekst artykułu': text_of_article,
+                             'Nazwa cyklu': series_name,
+                             'Link do cyklu': series_link,
+                             'Link do pliku audio': program_link,
+                             'Linki zewnętrzne': external_links,
+                             'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img') if not re.findall(r'(bookmark)|(email)|(twitter)|(facebook)', x['src'])] else False,
+                             'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
+                             'Linki do zdjęć': photos_links
+                            }
+
+
+    all_results.append(dictionary_of_article)
+
+
    
 #Funkcje do pozyskania dat publikacji wpisów z sekcji biblioteka, aby uzupełnić nimi listę all_results:  
 
@@ -216,29 +284,17 @@ def add_dates_to_all_results():
 
 #sitemap_link = 'https://www.biuroliterackie.pl/sitemap_index.xml'
 #Wybrane linki z sitemap_link:
-sitemaps_links = ['https://www.biuroliterackie.pl/ksiazki-sitemap.xml',
-                  'https://www.biuroliterackie.pl/utwory-sitemap.xml',
-                  'https://www.biuroliterackie.pl/nagrania-sitemap.xml',
-                  'https://www.biuroliterackie.pl/debaty-sitemap1.xml',
-                  'https://www.biuroliterackie.pl/debaty-sitemap2.xml',
-                  'https://www.biuroliterackie.pl/wywiady-sitemap.xml',
-                  'https://www.biuroliterackie.pl/recenzje-sitemap1.xml',
-                  'https://www.biuroliterackie.pl/recenzje-sitemap2.xml',
-                  'https://www.biuroliterackie.pl/kartoteka_25-sitemap.xml',
-                  'https://www.biuroliterackie.pl/felietony-sitemap.xml',
-                  'https://www.biuroliterackie.pl/dzwieki-sitemap.xml',
-                  'https://www.biuroliterackie.pl/zdjecia-sitemap.xml',
-                  'https://www.biuroliterackie.pl/biuletyn-sitemap.xml',
-                  'https://www.biuroliterackie.pl/projekty-sitemap.xml']
-
+sitemaps_links = ['https://www.biuroliterackie.pl/biuletyn-sitemap.xml']
+                  
+               
+                  
+# 'https://www.biuroliterackie.pl/projekty-sitemap.xml'
 
 #Stworzenie listy wszystkich linków ze strony (z wybranych linków mapy strony - selekcja linków wymienionych u dołu): 
 all_links = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_links_of_sitemap_links, sitemaps_links), total=len(sitemaps_links)))
  
-#Usunięcie duplikatów
-all_links = set(all_links)
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
@@ -246,7 +302,7 @@ with ThreadPoolExecutor() as excecutor:
 
 
 #Uzupełnienie listy słowników (all_results) o brakujące daty publikacji w artykułach z sekcją Biblioteka
-
+g
 all_formats_links_of_biblioteka = ['https://www.biuroliterackie.pl/biblioteka/wywiady/page/1','https://www.biuroliterackie.pl/biblioteka/recenzje/page/1', 'https://www.biuroliterackie.pl/biblioteka/ksiazki/page/1', 'https://www.biuroliterackie.pl/biblioteka/utwory/page/1', 'https://www.biuroliterackie.pl/biblioteka/debaty/page/1', 'https://www.biuroliterackie.pl/biblioteka/cykle/page/1', 'https://www.biuroliterackie.pl/biblioteka/dzwieki/page/1', 'https://www.biuroliterackie.pl/biblioteka/nagrania/page/1', 'https://www.biuroliterackie.pl/biblioteka/zdjecia/page/1', 'https://www.biuroliterackie.pl/biblioteka/kartoteka_25/page/1']
 
 all_created_links_of_biblioteka = []
@@ -311,9 +367,6 @@ for upload_file in upload_file_list:
 #Osobno zeskrobać po przejrzeniu?: 'https://www.biuroliterackie.pl/wydarzenia-sitemap.xml' (tu trzeba trochę pomyslec nad tym co zeskrobac i jak uporzadkowac), '
 
 #Selekcja częsci o ksiazkach z sekcji Ksiazki (dot. oferty sklepowej)
-
-
-
 
 
 
