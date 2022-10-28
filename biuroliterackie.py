@@ -16,17 +16,14 @@ from pydrive.drive import GoogleDrive
 
 #%% def
 
-def get_links_of_sitemap_links(link):
+def get_links_of_sitemap_links_biuletyn(link):
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
-    #Wykluczenie linków, które nie prowadzą bezporednio do artykułów:
-    links = [x.text for x in soup.find_all('loc') if not re.findall(r'(\/biuletyn\/$)|(\/recenzje\/$)|(\/ksiazki\/$)|(\/utwory\/$)|(\/nagrania\/$)|(\/debaty\/$)|(\/wywiady\/$)|(\/kartoteka\_25\/$)|(\/cykle\/$)|(\/dzwieki\/$)|(\/zdjecia\/$)|(\/projekty\/$)', x.text)]
+    links = [x.text for x in soup.find_all('loc') if not re.findall(r'(\/biuletyn\/$)', x.text)]
     all_links_from_biuletyn.extend(links)
     
     
-
-
-def dictionary_of_article_from_biuletyn(link):    
+def dictionary_of_article_from_biuletyn(link):
     html_text = requests.get(link).content
     soup = BeautifulSoup(html_text, 'lxml')
     
@@ -48,7 +45,6 @@ def dictionary_of_article_from_biuletyn(link):
         text_of_article = " ".join([x.text for x in content_of_article.find('div', class_='biuletyn___post-content').findChildren('p', recursive=False) if x.text and x.text != '\xa0'])
     except AttributeError:
         text_of_article = None
-     
 
     external_links = [x for x in [x.get('href') for x in content_of_article.find_all('a') if x.get('href') != None] if not re.findall(r'biuroliterackie|images|mail|#', x)]
     if external_links: 
@@ -56,38 +52,48 @@ def dictionary_of_article_from_biuletyn(link):
     else:
         external_links = None    
         
-    try: 
-        photos_links = ' | '.join([x['src'] for x in content_of_article.find_all('img')])  
-    except (AttributeError, KeyError, IndexError):
-        photos_links = None
-            
+    photos_links = [x['src'] for x in content_of_article.find_all('img')]  
+    if photos_links:
+        photos_links = ' | '.join(photos_links)
+          
+    #Related:    
+    if category == 'w bibliotece' and re.match('^(b|B)iBLioteka.*', title_of_article):
+        related = title_of_article
+    elif category == 'projekty' and 'Połów' in title_of_article:
+        related = re.sub(r'(^Połów\s\d{4})(.*)', r'\1', title_of_article)
+    elif category == 'premiery':
+        related = re.sub(r'(BL-e premiera \/ )?(Poezja z nagrodami\:)?(.*\:?.*)', r'\3', title_of_article).strip()
+    elif 'Stacja' in category or 'Stacja' in title_of_article:
+        related = category
+    elif 'TransPort' in category or 'TransPort' in title_of_article:
+        related = category
+    elif 'Poezja z nagrodami' in title_of_article:
+        related = re.sub(r'(Poezja z nagrodami\:)(.*)', r'\2', title_of_article).strip()
+    elif category == 'wieści z biura':
+        related = None
+    elif category == 'zapowiedzi' and 'Zapowiedź z Biura' in title_of_article:
+        related = re.sub(r'(Zapowiedź z Biura \/ )(.*)', r'\2', title_of_article)
+    elif category == 'wokół książek':
+        related = None
+    else:
+        related = None
         
+    
     dictionary_of_article = {'Link': link,
                              'Data publikacji': new_date,
                              'Sekcja': section,
                              'Kategoria': category,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
+                             'Wpis dotyczy': related,
                              'Linki zewnętrzne': external_links,
                              'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img') if not re.findall(r'(bookmark)|(email)|(twitter)|(facebook)', x['src'])] else False,
                              'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
                              'Linki do zdjęć': photos_links
                             }
-
-
     all_results_biuletyn.append(dictionary_of_article)
 
-# def get_links_of_sitemap_links(link):
-#     html_text = requests.get(link).text
-#     soup = BeautifulSoup(html_text, 'lxml')
-#     #Wykluczenie linków, które nie prowadzą bezporednio do artykułów:
-#     links = [x.text for x in soup.find_all('loc') if not re.findall(r'(\/biuletyn\/$)|(\/recenzje\/$)|(\/ksiazki\/$)|(\/utwory\/$)|(\/nagrania\/$)|(\/debaty\/$)|(\/wywiady\/$)|(\/kartoteka\_25\/$)|(\/cykle\/$)|(\/dzwieki\/$)|(\/zdjecia\/$)|(\/projekty\/$)', x.text)]
-#     all_links_from_biuletyn.extend(links)
 
-
-#Funkcje do pozyskania dat publikacji wpisów z sekcji biblioteka, aby uzupełnić nimi listę all_results:  
-
-#Funkcja do stworzenia listy wygenerowanych linków stron, na których znajduje się lista artykułów z poszczególnych kategorii sekcji biblioteka (przykład: 'https://www.biuroliterackie.pl/biblioteka/wywiady/page/1'). Nie wszystkie linki z tej listy będą zawierać informacje - niektóre będą puste - czy są puste sprawdzi funkcja poniżej - checking_content_of_links    
 
 def web_scraping_biblioteka_by_category(link):
     format_link = re.sub(r'(https\:\/\/www\.biuroliterackie\.pl\/biblioteka\/)(.*)(\/page\/)(\d*)', r'\1\2\3', link)
@@ -96,7 +102,6 @@ def web_scraping_biblioteka_by_category(link):
         all_created_links_of_biblioteka.append(link)   
    
 def checking_content_of_links(link): 
-    #link = all_created_links_of_biblioteka[1]
     html_text = requests.get(link).text
     while 'Error' in html_text:
         time.sleep(5)
@@ -112,29 +117,16 @@ def checking_content_of_links(link):
 def links_and_dates_of_publications(link):
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
-
     list_of_links = [x.a['href'] for x in soup.find_all('span', class_='wiecej')]
     list_of_dates_of_publication = [datetime.fromtimestamp(mktime(time.strptime(e.strip(), "%d/%m/%Y"))).date().strftime("%Y-%m-%d") for e in [x.text for x in soup.find_all('span', class_='archive_date')]]
+    dictionary_of_links_with_dates = [{x:y} for x,y in list(zip(list_of_links, list_of_dates_of_publication))]
+    all_list_of_links_with_dates_from_biblioteka.extend(dictionary_of_links_with_dates)
+
+
+def dictionary_of_article_from_biblioteka(x):
+    link = "".join([key for key,value in x.items()])
     
-    list_of_links_with_dates = list(zip(list_of_links, list_of_dates_of_publication))
-    all_list_of_links_with_dates_from_biblioteka.extend(list_of_links_with_dates)
-
-def add_dates_to_all_results():     
-    #record = all_results[1]
-    for record in tqdm(all_results):
-       for key,value in record.items(): 
-           for tup in all_list_of_links_with_dates_from_biblioteka:
-                if record['Link'] in tup[0]:
-                    record['Data publikacji'] = tup[1]
-
-
-def dictionary_of_article_from_biblioteka(tuple_link_and_date[0]):
-    tuple_link_and_date = ('https://www.biuroliterackie.pl/biblioteka/recenzje/w-zludzeniu/',
-                           '2016-02-22')
-    tuple_link_and_date[0] = ('https://www.biuroliterackie.pl/biblioteka/debaty/swiat-nie-jest-do-zycia/', '2016-02-22')
-    tuple_link_and_date = ('https://www.biuroliterackie.pl/biblioteka/cykle/7-siedmiu-moich-portowych-autorow-martyna-bulizanska-trauma/', '2016-02-22')
-   
-    #link = 'https://www.biuroliterackie.pl/biblioteka/recenzje/spalanie-grzegorza-kwiatkowskiego-2/' #recenzja #WAŻNE: brak daty
+    #link = 'https://www.biuroliterackie.pl/biblioteka/recenzje/spalanie-grzegorza-kwiatkowskiego-2/' #recenzja
     #link = 'https://www.biuroliterackie.pl/biblioteka/cykle/7-siedmiu-moich-portowych-autorow-martyna-bulizanska-trauma/' #felieton z cyklu
     #link = 'https://www.biuroliterackie.pl/biblioteka/ksiazki/tlen/' #inna struktura danych
     #link = 'https://www.biuroliterackie.pl/biblioteka/ksiazki/hurtownia-ran-i-wiersze-ludowe/' #ksiazki (z wierszami)
@@ -148,10 +140,10 @@ def dictionary_of_article_from_biblioteka(tuple_link_and_date[0]):
     #link = 'https://www.biuroliterackie.pl/biblioteka/nagrania/rozmowy-na-koniec-odcinek-3-krzysztof-chronowski/'
     #link = 'https://www.biuroliterackie.pl/biblioteka/debaty/swiat-nie-jest-do-zycia/'
     
-    html_text = requests.get(tuple_link_and_date[0]).content
+    html_text = requests.get(link).content
     soup = BeautifulSoup(html_text, 'lxml')
     
-    section = re.sub(r'(https:\/\/www\.biuroliterackie\.pl\/)(biblioteka|biuletyn|ksiazki|projekty)(\/)(.*)', r'\2', tuple_link_and_date[0])
+    section = re.sub(r'(https:\/\/www\.biuroliterackie\.pl\/)(biblioteka|biuletyn|ksiazki|projekty)(\/)(.*)', r'\2', link)
     
     category = soup.find('span', class_='category')
     if category: 
@@ -159,7 +151,7 @@ def dictionary_of_article_from_biblioteka(tuple_link_and_date[0]):
     else:
         category = None
 
-    date_of_publication = tuple_link_and_date[1]
+    date_of_publication = "".join([value for key,value in x.items()])
    
     try:    
         excerpt = soup.find('p', class_='excerpt').text.strip()
@@ -241,7 +233,7 @@ def dictionary_of_article_from_biblioteka(tuple_link_and_date[0]):
                              'Nota o autorze': about_author,
                              'Zdjęcie autora': author_photo,
                              'Tytuł artykułu': title_of_article,
-                             'Wyimek': excerpt,
+                             'Adnotacja': excerpt,
                              'Tekst artykułu': text_of_article,
                              'Tytuły wierszy': titles_of_poems,
                              'Nazwa cyklu': series_name,
@@ -254,37 +246,27 @@ def dictionary_of_article_from_biblioteka(tuple_link_and_date[0]):
                             }
 
 
-    all_results.append(dictionary_of_article)
+    all_results_biblioteka.append(dictionary_of_article)
    
-                    
                     
     
 #%% main BIULETYN
 
-#sitemap_link = 'https://www.biuroliterackie.pl/sitemap_index.xml'
-#Wybrane linki z sitemap_link:
 
-# 'https://www.biuroliterackie.pl/projekty-sitemap.xml'
+sitemap_link_biuletyn = ['https://www.biuroliterackie.pl/biuletyn-sitemap.xml']
 
-
-
-
-sitemaps_links = ['https://www.biuroliterackie.pl/biuletyn-sitemap.xml']
-#Wszystkie linki z sekcji biuletyn (niecałe 800):
-    
 all_links_from_biuletyn = []
 with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(get_links_of_sitemap_links, sitemaps_links), total=len(sitemaps_links)))
+    list(tqdm(excecutor.map(get_links_of_sitemap_links_biuletyn, sitemap_link_biuletyn), total=len(sitemap_link_biuletyn)))
 
 all_results_biuletyn = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article_from_biuletyn, all_links_from_biuletyn), total=len(all_links_from_biuletyn)))
     
-df_biuletyn = pd.DataFrame(all_results_biuletyn)    
+df_biuletyn = pd.DataFrame(all_results_biuletyn).drop_duplicates()    
+df_biuletyn = df_biuletyn.sort_values('Data publikacji', ascending=False)
 
-#%% main Pozostałe artykuły 
-
-#Uzupełnienie listy słowników (all_results) o brakujące daty publikacji w artykułach z sekcją Biblioteka
+#%% main Pozostałe artykuły (sekcja biblioteka)
 
 all_formats_links_of_biblioteka = ['https://www.biuroliterackie.pl/biblioteka/wywiady/page/1','https://www.biuroliterackie.pl/biblioteka/recenzje/page/1', 'https://www.biuroliterackie.pl/biblioteka/ksiazki/page/1', 'https://www.biuroliterackie.pl/biblioteka/utwory/page/1', 'https://www.biuroliterackie.pl/biblioteka/debaty/page/1', 'https://www.biuroliterackie.pl/biblioteka/cykle/page/1', 'https://www.biuroliterackie.pl/biblioteka/dzwieki/page/1', 'https://www.biuroliterackie.pl/biblioteka/nagrania/page/1', 'https://www.biuroliterackie.pl/biblioteka/zdjecia/page/1', 'https://www.biuroliterackie.pl/biblioteka/kartoteka_25/page/1']
 
@@ -296,58 +278,32 @@ all_available_links_of_biblioteka = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(checking_content_of_links, all_created_links_of_biblioteka), total=len(all_created_links_of_biblioteka)))       
     
+
 all_list_of_links_with_dates_from_biblioteka = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(links_and_dates_of_publications, all_available_links_of_biblioteka), total=len(all_available_links_of_biblioteka)))       
 
-all_list_of_links_with_dates_from_biblioteka[1][0]
 
-
-##
 all_results_biblioteka = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article_from_biblioteka, all_list_of_links_with_dates_from_biblioteka), total=len(all_list_of_links_with_dates_from_biblioteka)))
 
     
+df_biblioteka = pd.DataFrame(all_results_biblioteka).drop_duplicates() 
+df_biblioteka = df_biblioteka.sort_values('Data publikacji', ascending=False)
 
-
-
-
-
-
-
-#Uruchomienie funkcji uzupełniającej luki w kolumnie Data publikacji z all_results: 
-add_dates_to_all_results()
-
-
-
-
-#Utworzenie obiektu DataFrame z aktualizowanej o daty listy all_results i sortowanie wg dat:
-df = pd.DataFrame(all_results).drop_duplicates() 
-#df['Data publikacji'].isna().value_counts() #do sprawdzenia
-df = df.sort_values('Data publikacji', ascending=False)
-
-#df_test = df[df['Tytuły wierszy'] != '']
-# df['Sekcja'].value_counts()
-# df['Data publikacji'].isna().value_counts()
-# df[df['Sekcja'].str.contains('biuletyn') & df['Data publikacji'].isna()]
-# df_notna_date = df[df["Sekcja"].str.contains("biblioteka") & df['Data publikacji'].notna()]
-# df[df['Autor'].str.contains('Grzegorz Wróblewski')]    
-
-#sprawdzenie przez podstawienie linku do artykułu (po wejsciu na strone artykulu nie widac daty)
-# value = 'https://www.biuroliterackie.pl/biblioteka/debaty/poeta-dzisiaj-nie-ma-partnera-do-rozmowy/'
-# for tup in all_list_of_links_with_dates_from_biblioteka:
-#     if value in tup[0]:
-#         print(tup[1])
-
+#merge_dataframes = pd.concat([df_biuletyn, df_biblioteka])
 
 #%% json i xlsx
 
-with open(f'biuroliterackie_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f) 
+with open(f'biuroliterackie_biuletyn_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results_biuletyn, f) 
+with open(f'biuroliterackie_biblioteka_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results_biblioteka, f) 
 
 with pd.ExcelWriter(f"biuroliterackie_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
-    df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
+    df_biuletyn.to_excel(writer, 'Biuletyn', index=False) 
+    df_biblioteka.to_excel(writer, 'Biblioteka', index=False)
     writer.save()  
 
     
@@ -356,7 +312,7 @@ with pd.ExcelWriter(f"biuroliterackie_{datetime.today().date()}.xlsx", engine='x
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"biuroliterackie_{datetime.today().date()}.xlsx", f'biuroliterackie_{datetime.today().date()}.json']
+upload_file_list = [f"biuroliterackie_{datetime.today().date()}.xlsx", f'biuroliterackie_biuletyn_{datetime.today().date()}.json', f'biuroliterackie_biblioteka_{datetime.today().date()}.json']
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
 	gfile.SetContentFile(upload_file)
@@ -371,25 +327,9 @@ for upload_file in upload_file_list:
 
 
 
-upload_file_list = [f"biuroliterackie_{datetime.today().date()}.xlsx", f'biuroliterackie_{datetime.today().date()}.json']
-for upload_file in upload_file_list:
-	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
-	gfile.SetContentFile(upload_file)
-	gfile.Upload()  
+# 'https://www.biuroliterackie.pl/projekty-sitemap.xml'
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
+# all_formats_links_of_biblioteka = ['https://www.biuroliterackie.pl/biblioteka/wywiady/page/1','https://www.biuroliterackie.pl/biblioteka/recenzje/page/1', 'https://www.biuroliterackie.pl/biblioteka/ksiazki/page/1', 'https://www.biuroliterackie.pl/biblioteka/utwory/page/1', 'https://www.biuroliterackie.pl/biblioteka/debaty/page/1', 'https://www.biuroliterackie.pl/biblioteka/cykle/page/1', 'https://www.biuroliterackie.pl/biblioteka/dzwieki/page/1', 'https://www.biuroliterackie.pl/biblioteka/nagrania/page/1', 'https://www.biuroliterackie.pl/biblioteka/zdjecia/page/1', 'https://www.biuroliterackie.pl/biblioteka/kartoteka_25/page/1']
 
 
 
