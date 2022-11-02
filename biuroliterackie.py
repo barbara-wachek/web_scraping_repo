@@ -247,8 +247,93 @@ def dictionary_of_article_from_biblioteka(x):
 
 
     all_results_biblioteka.append(dictionary_of_article)
-   
-                    
+
+
+def get_links_ksiazki_katalog(sitemap_link): 
+    html_text = requests.get(sitemap_link).content
+    soup = BeautifulSoup(html_text, 'lxml')
+    links = [x.text for x in soup.find_all('loc')][1:]
+    all_links_from_ksiazki_katalog.extend(links)
+    
+def dictionary_of_ksiazki_katalog(link):
+    html_text = requests.get(link).content
+    soup = BeautifulSoup(html_text, 'lxml')
+    
+    try:
+        date_of_publication = soup.find('span', class_='data_data').text
+        result = time.strptime(date_of_publication.strip(), "%d/%m/%Y")
+        changed_date = datetime.fromtimestamp(mktime(result))   
+        new_date = changed_date.date().strftime("%Y-%m-%d")
+    except AttributeError:
+        new_date = None
+        
+    
+    title_of_book = soup.find('h4', class_='biuletyn_title')
+    if title_of_book: 
+        title_of_book = title_of_book.text
+    
+    content_of_article = soup.find('div', attrs={'id':'content'})
+     
+    
+    note_about_book = soup.find('div', class_='ksiazka-excerpt')
+    if note_about_book:
+        note_about_book = note_about_book.text.strip()
+    else:
+        note_about_book = None
+
+    try: 
+        cover = " ".join([x['src'] for x in content_of_article.find('div', class_='col-md-4').findChildren('img')])
+    except AttributeError:
+        cover = None
+    
+    table_of_content = soup.find('div', attrs={'id':'spis-tresci'})
+    if table_of_content:
+        table_of_content = table_of_content.text.strip().replace('\n', ' | ')
+    else:
+        table_of_content = None
+    
+    reviews = soup.find('div', class_='row opinie-o-ksiazce lato-font')  
+    if reviews:
+        authors_of_reviews = [x.text for x in reviews.find_all('p', class_='autor')]
+        reviews = [x.text for x in reviews.find_all('p', class_=None)]
+    else:
+        reviews = None
+        authors_of_reviews = None
+    
+    
+    if reviews:
+        if authors_of_reviews:
+            dictionary_of_reviews = {}
+            for text in reviews:
+                for name in authors_of_reviews:
+                    dictionary_of_reviews[name] = text
+    else: 
+        dictionary_of_reviews = None
+        
+    
+    
+    dictionary_of_ksiazki_katalog = {'Link': link,
+                         'Data publikacji': new_date,
+                         'Tytuł książki': title_of_book, 
+                         'Okładka': cover,
+                         'Nota o książce': note_about_book,
+                         'Spis treści': table_of_content,
+                         'Opinie o książce': dictionary_of_reviews
+                            }
+
+    #info_field - dane ksiazki z tabeli
+    info_field = soup.find_all('div', class_='info_field')
+    for x in info_field:
+        key = x.find('div', class_='info_field_left').text
+        value = x.find('div', class_='info_field_right').text
+        if not key in dictionary_of_ksiazki_katalog.keys():
+            dictionary_of_ksiazki_katalog[key] = value
+    
+    
+    all_results_ksiazki_katalog.append(dictionary_of_ksiazki_katalog)
+    
+    
+                       
     
 #%% main BIULETYN
 
@@ -294,16 +379,34 @@ df_biblioteka = df_biblioteka.sort_values('Data publikacji', ascending=False)
 
 #merge_dataframes = pd.concat([df_biuletyn, df_biblioteka])
 
+#%% Ksiazki katalog
+
+
+all_links_from_ksiazki_katalog = [] 
+get_links_ksiazki_katalog('https://www.biuroliterackie.pl/ksiazki_lista-sitemap.xml')
+
+
+all_results_ksiazki_katalog = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(dictionary_of_ksiazki_katalog, all_links_from_ksiazki_katalog), total=len(all_links_from_ksiazki_katalog)))
+
+df_ksiazki_katalog = pd.DataFrame(all_results_ksiazki_katalog)
+df_ksiazki_katalog = df_ksiazki_katalog.sort_values('Data publikacji', ascending=False)
+
+
 #%% json i xlsx
 
 with open(f'biuroliterackie_biuletyn_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results_biuletyn, f) 
 with open(f'biuroliterackie_biblioteka_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results_biblioteka, f) 
+with open(f'biuroliterackie_ksiazki_katalog_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results_ksiazki_katalog, f) 
 
 with pd.ExcelWriter(f"biuroliterackie_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df_biuletyn.to_excel(writer, 'Biuletyn', index=False) 
     df_biblioteka.to_excel(writer, 'Biblioteka', index=False)
+    df_ksiazki_katalog.to_excel(writer, 'Książki Katalog', index=False)
     writer.save()  
 
     
@@ -312,7 +415,7 @@ with pd.ExcelWriter(f"biuroliterackie_{datetime.today().date()}.xlsx", engine='x
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"biuroliterackie_{datetime.today().date()}.xlsx", f'biuroliterackie_biuletyn_{datetime.today().date()}.json', f'biuroliterackie_biblioteka_{datetime.today().date()}.json']
+upload_file_list = [f"biuroliterackie_{datetime.today().date()}.xlsx", f'biuroliterackie_biuletyn_{datetime.today().date()}.json', f'biuroliterackie_biblioteka_{datetime.today().date()}.json', f'biuroliterackie_ksiazki_katalog_{datetime.today().date()}.json']
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
 	gfile.SetContentFile(upload_file)
@@ -324,7 +427,7 @@ for upload_file in upload_file_list:
 #Osobno zeskrobać po przejrzeniu?: 'https://www.biuroliterackie.pl/wydarzenia-sitemap.xml' (tu trzeba trochę pomyslec nad tym co zeskrobac i jak uporzadkowac), '
 
 #Selekcja częsci o ksiazkach z sekcji Ksiazki (dot. oferty sklepowej)
-
+#Projekty
 
 
 # 'https://www.biuroliterackie.pl/projekty-sitemap.xml'
