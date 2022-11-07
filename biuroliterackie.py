@@ -55,6 +55,7 @@ def dictionary_of_article_from_biuletyn(link):
     photos_links = [x['src'] for x in content_of_article.find_all('img')]  
     if photos_links:
         photos_links = ' | '.join(photos_links)
+        
           
     #Related:    
     if category == 'w bibliotece' and re.match('^(b|B)iBLioteka.*', title_of_article):
@@ -79,6 +80,13 @@ def dictionary_of_article_from_biuletyn(link):
         related = None
         
     
+    if related != None and re.match(r'(\s?\p{Lu}\p{L}*\s\p{Lu}*\.?\p{L}*\s*)(\p{Lu}*\-?\p{Lu}*)(\:?\s)(.*)', related):
+        author_of_book = re.sub(r'(\s?\p{Lu}\p{L}*\s\p{Lu}*\.?\p{L}*\s*)(\p{Lu}*\-?\p{Lu}*)(\:?\s)(.*)', r'\1\2', related).title()
+        title_of_book = re.sub(r'(\s?\p{Lu}\p{L}*\s\p{Lu}*\.?\p{L}*\s*)(\p{Lu}*\-?\p{Lu}*)(\:?\s)(.*)', r'\4', related)
+    else:
+        author_of_book = None
+        title_of_book = None
+    
     dictionary_of_article = {'Link': link,
                              'Data publikacji': new_date,
                              'Sekcja': section,
@@ -86,11 +94,14 @@ def dictionary_of_article_from_biuletyn(link):
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Wpis dotyczy': related,
+                             'Autor książki': author_of_book,
+                             'Tytuł książki': title_of_book,
                              'Linki zewnętrzne': external_links,
                              'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img') if not re.findall(r'(bookmark)|(email)|(twitter)|(facebook)', x['src'])] else False,
                              'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
                              'Linki do zdjęć': photos_links
                             }
+    
     all_results_biuletyn.append(dictionary_of_article)
 
 
@@ -124,22 +135,10 @@ def links_and_dates_of_publications(link):
 
 
 def dictionary_of_article_from_biblioteka(x):
+    #x = {'https://www.biuroliterackie.pl/biblioteka/nagrania/nieobecnosc/': '2022-10-09'}
+    #x = {'https://www.biuroliterackie.pl/biblioteka/ksiazki/z-kamienia-i-kosci/': '2022-10-01'}
+    #x = {'https://www.biuroliterackie.pl/biblioteka/cykle/podsumowanie-transportu-literackiego-27/' :'2020-10-10'}
     link = "".join([key for key,value in x.items()])
-    
-    #link = 'https://www.biuroliterackie.pl/biblioteka/recenzje/spalanie-grzegorza-kwiatkowskiego-2/' #recenzja
-    #link = 'https://www.biuroliterackie.pl/biblioteka/cykle/7-siedmiu-moich-portowych-autorow-martyna-bulizanska-trauma/' #felieton z cyklu
-    #link = 'https://www.biuroliterackie.pl/biblioteka/ksiazki/tlen/' #inna struktura danych
-    #link = 'https://www.biuroliterackie.pl/biblioteka/ksiazki/hurtownia-ran-i-wiersze-ludowe/' #ksiazki (z wierszami)
-    #link = 'https://www.biuroliterackie.pl/biblioteka/utwory/z-raptularza/'
-    #link = 'https://www.biuroliterackie.pl/biblioteka/zdjecia/zycie-na-korei/'
-    #link = 'https://www.biuroliterackie.pl/biblioteka/dzwieki/bedzie/' #z audio
-    #link = 'https://www.biuroliterackie.pl/biblioteka/dzwieki/egzotyczne-ptaki-i-rosliny/' #z audio
-    #link = 'https://www.biuroliterackie.pl/biblioteka/recenzje/ewangelia-brudnych-ludzi/'
-    #link = 'https://www.biuroliterackie.pl/biblioteka/recenzje/piec-esejow-homerowskich/'
-    #link = 'https://www.biuroliterackie.pl/biblioteka/cykle/podsumowanie-transportu-literackiego-27/'
-    #link = 'https://www.biuroliterackie.pl/biblioteka/nagrania/rozmowy-na-koniec-odcinek-3-krzysztof-chronowski/'
-    #link = 'https://www.biuroliterackie.pl/biblioteka/debaty/swiat-nie-jest-do-zycia/'
-    
     html_text = requests.get(link).content
     soup = BeautifulSoup(html_text, 'lxml')
     
@@ -158,11 +157,11 @@ def dictionary_of_article_from_biblioteka(x):
     except(AttributeError, KeyError, IndexError):
         excerpt = None  
     
-    author = soup.find('h4', class_='title_autor')
-    if author:
-        author = author.text.strip()
+    list_of_authors = soup.find_all('h4', class_='title_autor')
+    if list_of_authors:
+        authors = ' | '.join([x.text.strip() for x in list_of_authors])
     else:
-        author = None
+        authors = None
           
     title_of_article = soup.find('h1', class_='title_h1')
     if title_of_article:
@@ -172,7 +171,7 @@ def dictionary_of_article_from_biblioteka(x):
         
     content_of_article = soup.find('main', class_='site-main')
        
-    text_of_article = [x.text.replace('\xa0','').replace('\n',' ').strip() for x in content_of_article.find_all('section', class_='single_right') if not re.findall(r'O AUTORZE', x.text)]
+    text_of_article = [x.text.replace('\xa0','').replace('\n',' ').strip() for x in content_of_article.find_all('section', class_='single_right') if not re.findall(r'(O AUTORZE)|(O AUTORACH)', x.text)]
     if text_of_article:
         text_of_article = " ".join(text_of_article)
     else:
@@ -185,16 +184,22 @@ def dictionary_of_article_from_biblioteka(x):
     else:
         titles_of_poems = None 
           
-    about_author = content_of_article.find('p', class_='o_autorze_bio')
-    if about_author:
-        about_author = about_author.text
-    else:
-        about_author = None 
         
-    try: 
-        author_photo = content_of_article.find('div', class_='o_autorze_left').img['src']
-    except(AttributeError, KeyError, IndexError, TypeError):
-        author_photo = None 
+    about_author = content_of_article.find_all('div', class_='autor_pole')
+    if about_author:
+        list_of_informations_about_authors = []
+        for element in about_author:
+            dictionary_of_authors = {}
+            about_author = element.find('p', class_='o_autorze_bio').text
+            name_of_author = element.find('h6').text.strip().replace('\xa0', ' ')
+            dictionary_of_authors = {name_of_author:about_author}
+            if element.find('div', class_='o_autorze_left').img:
+                author_photo = element.find('div', class_='o_autorze_left').img['src']
+                dictionary_of_authors['Zdjęcie'] = author_photo
+            list_of_informations_about_authors.append(dictionary_of_authors)    
+    else:
+        list_of_informations_about_authors = None 
+        
     
     external_links = [x for x in [x.get('href') for x in content_of_article.find_all('a') if x.get('href') != None] if not re.findall(r'biuroliterackie|images|mail|#', x)]
     if external_links:
@@ -229,9 +234,8 @@ def dictionary_of_article_from_biblioteka(x):
                              'Tytuł czasopisma': title_of_journal,
                              'Sekcja': section,
                              'Kategoria': category,
-                             'Autor': author,
-                             'Nota o autorze': about_author,
-                             'Zdjęcie autora': author_photo,
+                             'Autorzy': authors,
+                             'Noty o autorach i zdjęcia': list_of_informations_about_authors,
                              'Tytuł artykułu': title_of_article,
                              'Adnotacja': excerpt,
                              'Tekst artykułu': text_of_article,
@@ -333,6 +337,37 @@ def dictionary_of_ksiazki_katalog(link):
     all_results_ksiazki_katalog.append(dictionary_of_ksiazki_katalog)
     
     
+    
+def web_scraping_projekty_by_category(link):
+    format_link = re.sub(r'(https\:\/\/www\.biuroliterackie\.pl\/projekty)(\/page\/)(\d*)(\/)', r'\1\2', link)
+    for number in range(1,50):
+        link = format_link+str(number)
+        all_created_links_of_projekty.append(link)   
+ 
+    
+all_available_links_of_projekty = []
+def checking_content_of_links_from_projekty_category(link):
+    #link = 'https://www.biuroliterackie.pl/projekty/page/5/'
+    html_text = requests.get(link).text
+    while 'Error' in html_text:
+        time.sleep(5)
+        html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    
+    try:
+        if soup.find('div', class_='biuletyn-dbs').findChildren('article', recursive=False) != []:
+            all_available_links_of_projekty.append(link)
+    except AttributeError:
+        pass
+        
+
+def links_and_dates_of_publications(link):
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    list_of_links = [x.a['href'] for x in soup.find_all('span', class_='wiecej')]
+    list_of_dates_of_publication = [datetime.fromtimestamp(mktime(time.strptime(e.strip(), "%d/%m/%Y"))).date().strftime("%Y-%m-%d") for e in [x.text for x in soup.find_all('span', class_='archive_date')]]
+    dictionary_of_links_with_dates = [{x:y} for x,y in list(zip(list_of_links, list_of_dates_of_publication))]
+    all_list_of_links_with_dates_from_biblioteka.extend(dictionary_of_links_with_dates)    
                        
     
 #%% main BIULETYN
@@ -374,10 +409,9 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article_from_biblioteka, all_list_of_links_with_dates_from_biblioteka), total=len(all_list_of_links_with_dates_from_biblioteka)))
 
     
-df_biblioteka = pd.DataFrame(all_results_biblioteka).drop_duplicates() 
+df_biblioteka = pd.DataFrame(all_results_biblioteka)
 df_biblioteka = df_biblioteka.sort_values('Data publikacji', ascending=False)
 
-#merge_dataframes = pd.concat([df_biuletyn, df_biblioteka])
 
 #%% Ksiazki katalog
 
@@ -385,13 +419,23 @@ df_biblioteka = df_biblioteka.sort_values('Data publikacji', ascending=False)
 all_links_from_ksiazki_katalog = [] 
 get_links_ksiazki_katalog('https://www.biuroliterackie.pl/ksiazki_lista-sitemap.xml')
 
-
 all_results_ksiazki_katalog = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_ksiazki_katalog, all_links_from_ksiazki_katalog), total=len(all_links_from_ksiazki_katalog)))
 
 df_ksiazki_katalog = pd.DataFrame(all_results_ksiazki_katalog)
 df_ksiazki_katalog = df_ksiazki_katalog.sort_values('Data publikacji', ascending=False)
+
+
+
+#%% Projekty: 
+    
+all_created_links_of_projekty = []    
+web_scraping_projekty_by_category('https://www.biuroliterackie.pl/projekty/page/1/')
+
+all_available_links_of_projekty = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(checking_content_of_links_from_projekty_category, all_created_links_of_projekty), total=len(all_created_links_of_projekty)))
 
 
 #%% json i xlsx
