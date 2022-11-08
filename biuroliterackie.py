@@ -135,9 +135,6 @@ def links_and_dates_of_publications(link):
 
 
 def dictionary_of_article_from_biblioteka(x):
-    #x = {'https://www.biuroliterackie.pl/biblioteka/nagrania/nieobecnosc/': '2022-10-09'}
-    #x = {'https://www.biuroliterackie.pl/biblioteka/ksiazki/z-kamienia-i-kosci/': '2022-10-01'}
-    #x = {'https://www.biuroliterackie.pl/biblioteka/cykle/podsumowanie-transportu-literackiego-27/' :'2020-10-10'}
     link = "".join([key for key,value in x.items()])
     html_text = requests.get(link).content
     soup = BeautifulSoup(html_text, 'lxml')
@@ -345,9 +342,7 @@ def web_scraping_projekty_by_category(link):
         all_created_links_of_projekty.append(link)   
  
     
-all_available_links_of_projekty = []
 def checking_content_of_links_from_projekty_category(link):
-    #link = 'https://www.biuroliterackie.pl/projekty/page/5/'
     html_text = requests.get(link).text
     while 'Error' in html_text:
         time.sleep(5)
@@ -361,16 +356,58 @@ def checking_content_of_links_from_projekty_category(link):
         pass
         
 
-def links_and_dates_of_publications(link):
+def links_and_dates_of_publications_from_projekty(link):
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
-    list_of_links = [x.a['href'] for x in soup.find_all('span', class_='wiecej')]
-    list_of_dates_of_publication = [datetime.fromtimestamp(mktime(time.strptime(e.strip(), "%d/%m/%Y"))).date().strftime("%Y-%m-%d") for e in [x.text for x in soup.find_all('span', class_='archive_date')]]
+    list_of_links = [x.a['href'] for x in soup.find_all('span', class_='biuletyn_wiecej-dbs lato-font')]
+    list_of_dates_of_publication = [datetime.fromtimestamp(mktime(time.strptime(e.strip(), "%d/%m/%Y"))).date().strftime("%Y-%m-%d") for e in [x.text for x in soup.find_all('span', class_='data_data-dbs')]]
     dictionary_of_links_with_dates = [{x:y} for x,y in list(zip(list_of_links, list_of_dates_of_publication))]
-    all_list_of_links_with_dates_from_biblioteka.extend(dictionary_of_links_with_dates)    
-                       
+    all_list_of_links_with_dates_from_projekty.extend(dictionary_of_links_with_dates)    
+
+def dictionary_of_article_from_projekty(x):
+    link = "".join([key for key,value in x.items()])
+    html_text = requests.get(link).content
+    soup = BeautifulSoup(html_text, 'lxml')
     
-#%% main BIULETYN
+    
+    date_of_publication = "".join([value for key,value in x.items()])
+    title_of_article = soup.find('h4', class_='biuletyn_title').text  
+    
+    content_of_article = soup.find('div', class_='biuletyn___post-content')
+       
+    text_of_article = [x.text.replace('\xa0','').replace('\n',' ').strip() for x in content_of_article.find_all('p') if not re.findall(r'(O AUTORZE)|(O AUTORACH)', x.text)]
+    if text_of_article:
+        text_of_article = " ".join(text_of_article).strip()
+    else:
+        text_of_article = None
+        
+    external_links = [x for x in [x.get('href') for x in content_of_article.find_all('a') if x.get('href') != None] if not re.findall(r'biuroliterackie|images|mail|#', x)]
+    if external_links:
+        external_links = ' | '.join(external_links)
+    else:
+        external_links = None
+ 
+    try: 
+        photos_links = ' | '.join([x['src'] for x in content_of_article.find_all('img')])  
+    except (AttributeError, KeyError, IndexError):
+        photos_links = None   
+        
+    
+    dictionary_of_article_from_projekty = {'Link': link,
+                         'Data publikacji': date_of_publication,
+                         'Tytuł artykułu': title_of_article,
+                         'Tekst artykułu': text_of_article,
+                         'Linki zewnętrzne': external_links,
+                         'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img') if not re.findall(r'(bookmark)|(email)|(twitter)|(facebook)', x['src'])] else False,
+                         'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
+                         'Linki do zdjęć': photos_links
+                        }
+        
+    all_results_projekty.append(dictionary_of_article_from_projekty)
+       
+        
+        
+#%% Biuletyn
 
 
 sitemap_link_biuletyn = ['https://www.biuroliterackie.pl/biuletyn-sitemap.xml']
@@ -386,7 +423,7 @@ with ThreadPoolExecutor() as excecutor:
 df_biuletyn = pd.DataFrame(all_results_biuletyn).drop_duplicates()    
 df_biuletyn = df_biuletyn.sort_values('Data publikacji', ascending=False)
 
-#%% main Pozostałe artykuły (sekcja biblioteka)
+#%% Biblioteka
 
 all_formats_links_of_biblioteka = ['https://www.biuroliterackie.pl/biblioteka/wywiady/page/1','https://www.biuroliterackie.pl/biblioteka/recenzje/page/1', 'https://www.biuroliterackie.pl/biblioteka/ksiazki/page/1', 'https://www.biuroliterackie.pl/biblioteka/utwory/page/1', 'https://www.biuroliterackie.pl/biblioteka/debaty/page/1', 'https://www.biuroliterackie.pl/biblioteka/cykle/page/1', 'https://www.biuroliterackie.pl/biblioteka/dzwieki/page/1', 'https://www.biuroliterackie.pl/biblioteka/nagrania/page/1', 'https://www.biuroliterackie.pl/biblioteka/zdjecia/page/1', 'https://www.biuroliterackie.pl/biblioteka/kartoteka_25/page/1']
 
@@ -415,7 +452,6 @@ df_biblioteka = df_biblioteka.sort_values('Data publikacji', ascending=False)
 
 #%% Ksiazki katalog
 
-
 all_links_from_ksiazki_katalog = [] 
 get_links_ksiazki_katalog('https://www.biuroliterackie.pl/ksiazki_lista-sitemap.xml')
 
@@ -436,7 +472,18 @@ web_scraping_projekty_by_category('https://www.biuroliterackie.pl/projekty/page/
 all_available_links_of_projekty = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(checking_content_of_links_from_projekty_category, all_created_links_of_projekty), total=len(all_created_links_of_projekty)))
-
+    
+all_list_of_links_with_dates_from_projekty = []    
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(links_and_dates_of_publications_from_projekty, all_available_links_of_projekty), total=len(all_available_links_of_projekty)))
+      
+all_results_projekty = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(dictionary_of_article_from_projekty, all_list_of_links_with_dates_from_projekty), total=len(all_list_of_links_with_dates_from_projekty)))    
+    
+df_projekty = pd.DataFrame(all_results_projekty)
+df_projekty = df_projekty.sort_values('Data publikacji', ascending=False)
+    
 
 #%% json i xlsx
 
@@ -446,11 +493,14 @@ with open(f'biuroliterackie_biblioteka_{datetime.today().date()}.json', 'w', enc
     json.dump(all_results_biblioteka, f) 
 with open(f'biuroliterackie_ksiazki_katalog_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results_ksiazki_katalog, f) 
+with open(f'biuroliterackie_projekty_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results_projekty, f) 
 
 with pd.ExcelWriter(f"biuroliterackie_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df_biuletyn.to_excel(writer, 'Biuletyn', index=False) 
     df_biblioteka.to_excel(writer, 'Biblioteka', index=False)
     df_ksiazki_katalog.to_excel(writer, 'Książki Katalog', index=False)
+    df_projekty .to_excel(writer, 'Projekty', index=False)
     writer.save()  
 
     
@@ -459,7 +509,8 @@ with pd.ExcelWriter(f"biuroliterackie_{datetime.today().date()}.xlsx", engine='x
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"biuroliterackie_{datetime.today().date()}.xlsx", f'biuroliterackie_biuletyn_{datetime.today().date()}.json', f'biuroliterackie_biblioteka_{datetime.today().date()}.json', f'biuroliterackie_ksiazki_katalog_{datetime.today().date()}.json']
+upload_file_list = [f"biuroliterackie_{datetime.today().date()}.xlsx", f'biuroliterackie_biuletyn_{datetime.today().date()}.json', f'biuroliterackie_biblioteka_{datetime.today().date()}.json', f'biuroliterackie_ksiazki_katalog_{datetime.today().date()}.json', f'biuroliterackie_projekty_{datetime.today().date()}.json']
+
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
 	gfile.SetContentFile(upload_file)
@@ -467,16 +518,11 @@ for upload_file in upload_file_list:
 
 
 
+
+
 #%% Notatki
 #Osobno zeskrobać po przejrzeniu?: 'https://www.biuroliterackie.pl/wydarzenia-sitemap.xml' (tu trzeba trochę pomyslec nad tym co zeskrobac i jak uporzadkowac), '
 
-#Selekcja częsci o ksiazkach z sekcji Ksiazki (dot. oferty sklepowej)
-#Projekty
-
-
-# 'https://www.biuroliterackie.pl/projekty-sitemap.xml'
-
-# all_formats_links_of_biblioteka = ['https://www.biuroliterackie.pl/biblioteka/wywiady/page/1','https://www.biuroliterackie.pl/biblioteka/recenzje/page/1', 'https://www.biuroliterackie.pl/biblioteka/ksiazki/page/1', 'https://www.biuroliterackie.pl/biblioteka/utwory/page/1', 'https://www.biuroliterackie.pl/biblioteka/debaty/page/1', 'https://www.biuroliterackie.pl/biblioteka/cykle/page/1', 'https://www.biuroliterackie.pl/biblioteka/dzwieki/page/1', 'https://www.biuroliterackie.pl/biblioteka/nagrania/page/1', 'https://www.biuroliterackie.pl/biblioteka/zdjecia/page/1', 'https://www.biuroliterackie.pl/biblioteka/kartoteka_25/page/1']
 
 
 
