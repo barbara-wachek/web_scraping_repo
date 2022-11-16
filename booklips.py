@@ -16,7 +16,6 @@ from functions import date_change_format_short
 
 #%% def
 def get_links_of_sitemap_links_posts(link):
-    link = 'https://booklips.pl/sitemap.xml'
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     links = [x.text for x in soup.find_all('loc') if not re.findall(r'(https\:\/\/booklips\.pl\/sitemap-pt-)(page)(-\d{4}-\d{2}\.xml)', x.text) and not re.findall(r'https\:\/\/booklips\.pl\/sitemap-misc\.xml', x.text)]
@@ -30,9 +29,37 @@ def get_links_of_sitemap_links_posts(link):
     
     return all_articles_links_posts
  
-    
- 
-    #(sitemap-misc\.xml$)|
+
+dictionary_of_authors = {'[am]': 'Artur Maszota', 
+                         '[kch]': 'Karolina Chymkowska',
+                         '[mw]': 'Mariusz Wojteczek',
+                         '[edm]': 'Emilia Dulczewska-Maszota',
+                         '[aw]': 'Anna Wyrwik', 
+                         '[kch,am]': 'Karolina Chymkowska | Artur Maszota',
+                         '[am,kch]': 'Artur Maszota | Karolina Chymkowska',
+                         '[am,mw]': 'Artur Maszota | Mariusz Wojteczek',
+                         '[aw,am]': 'Anna Wyrwik | Artur Maszota',
+                         '[pd]': 'Paweł Deptuch',
+                         '[ms]': 'Mirosław Skrzydło',
+                         '[mss]': 'Mirosław Szyłak-Szydłowski',
+                         '[pj]': 'Paulina Janota',
+                         '[sr]': 'Sebastian Rerak',
+                         '[mb]': 'Milena Buszkiewicz lub Maciej Bachorski',
+                         '[tm]': 'Tomasz Miecznikowski',
+                         '[bs]': 'Błażej Szymankiewicz',
+                         '[mw,am]': 'Mariusz Wojteczek | Artur Maszota',
+                         '[md]': '[md]',
+                         '[em]': '[em]',
+                         '[ks]': '[ks]',
+                         'Katarzyna Figiel': 'Katarzyna Figiel',
+                         'Marcin Waincetel' : 'Marcin Waincetel',
+                         'Bartłomiej Paszylk': 'Bartłomiej Paszylk',
+                         'Krzysztof Stelmarczyk': 'Krzysztof Stelmarczyk',
+                         'Milena Buszkiewicz': 'Milena Buszkiewicz',
+                         'Maciej Bachorski': 'Maciej Bachorski',
+                         'Natalia Hennig': 'Natalia Hennig'
+                         }
+
 
 def dictionary_of_article(link):
     #link = 'https://booklips.pl/newsy/zmarl-kevin-oneill-wspoltworca-serii-komiksowej-liga-niezwyklych-dzentelmenow/'
@@ -50,7 +77,7 @@ def dictionary_of_article(link):
     #link = 'https://booklips.pl/recenzje/historia-o-ogromnym-potencjale-recenzja-ksiazki-czarne-skrzydla-czasu-diane-setterfield/'
     # link = 'https://booklips.pl/adaptacje/film/zwiastun-filmu-oficer-i-szpieg-romana-polanskiego-nakreconego-na-podstawie-powiesci-roberta-harrisa/'
     # link = 'https://booklips.pl/artykuly/kaznodzieja-festiwal-przemocy-i-brutalnosci/'
-    # link = 'https://booklips.pl/artykuly/wspolczesny-bajarz-terry-pratchett/'
+    #link = 'https://booklips.pl/artykuly/wspolczesny-bajarz-terry-pratchett/'
     # link = 'https://booklips.pl/biurka-polskich-pisarzy/filip-zawada/'
     # link = 'https://booklips.pl/ciekawostki/dlaczego-henryk-sienkiewicz-otrzymal-nobla-i-jak-do-tego-doszlo-ze-nie-podzielil-sie-nagroda-z-eliza-orzeszkowa/'
     # link = 'https://booklips.pl/ciekawostki/dlaczego-a-j-finn-publikuje-pod-pseudonimem-wyjasniamy-zagadke-autora-kobiety-w-oknie/'
@@ -60,10 +87,22 @@ def dictionary_of_article(link):
     #link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/akcja-wisla-motywem-przewodnim-nowej-powiesci-roberta-nowakowskiego-przeczytaj-przed-premiera-fragment-ojczyzny-jablek/'
     #link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/o-dwoch-kobietach-fragment-uhonorowanej-nagroda-literacka-unii-europejskiej-powiesci-wyspa-krach-iny-wylczanowej/'
     # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/kultowa-zazi-w-metrze-raymonda-queneau-dostepna-w-ksiegarniach-przeczytaj-poczatek-ksiazki/'
-    # link = 'https://booklips.pl/galeria/eros-i-tanatos-na-ilustracjach-z-1934-roku-do-kwiatow-zla-charlesa-baudelairea/'
-    # link = 'https://booklips.pl/newsy/zlodziej-manuskryptow-zatrzymany-przez-fbi-od-ponad-pieciu-lat-podszywal-sie-pod-przedstawicieli-branzy-literackiej-by-zyskac-dostep-do-ksiazek-przed-premiera/'
+    #link = 'https://booklips.pl/galeria/eros-i-tanatos-na-ilustracjach-z-1934-roku-do-kwiatow-zla-charlesa-baudelairea/'
+    #link = 'https://booklips.pl/newsy/zlodziej-manuskryptow-zatrzymany-przez-fbi-od-ponad-pieciu-lat-podszywal-sie-pod-przedstawicieli-branzy-literackiej-by-zyskac-dostep-do-ksiazek-przed-premiera/'
     # link = 'https://booklips.pl/newsy/w-nowym-albumie-lucky-luke-bedzie-walczyl-z-rasizmem-na-glebokim-poludniu/'
-    
+    # link = 'https://booklips.pl/adaptacje/film/zakonczono-zdjecia-do-filmu-na-podstawie-ksiazki-teczowe-san-francisco-alysii-abbott-za-produkcje-odpowiada-sofia-coppola/'
+    # link = 'https://booklips.pl/adaptacje/film/superbohaterowie-filmowa-historia-o-zwiazkach-i-roli-jaka-odgrywa-w-nich-czas-ktora-paolo-genovese-nakrecil-na-podstawie-wlasnej-powiesci/'
+    #link = 'https://booklips.pl/adaptacje/film/marcin-dorocinski-w-roli-edwarda-popielskiego-premiera-serialu-erynie-borysa-lankosza-juz-25-pazdziernika/'
+    #link = 'https://booklips.pl/biurka-polskich-pisarzy/jaroslaw-maslanek/'
+    # link = 'https://booklips.pl/adaptacje/film/pierwszy-zwiastun-filmu-ziarno-prawdy-na-podstawie-powiesci-zygmunta-miloszewskiego/'
+    # link = 'https://booklips.pl/ciekawostki/albert-einstein-wyjasnia-dlaczego-warto-czytac-klasykow/'
+    # link = 'https://booklips.pl/ciekawostki/najlepszy-dowod-uznania-jaki-maurice-sendak-otrzymal-od-malego-czytelnika/'
+    # link = 'https://booklips.pl/newsy/marianna-kijanowska-dziekuje-za-nagrode-herberta-2022-na-gale-nie-mogla-przyjechac-z-powodow-zdrowotnych/'
+    # link = 'https://booklips.pl/czytelnia/listy/thomas-wolfe-opisuje-pijackie-przezycie-z-oktoberfestu-w-1928-roku/'
+    # link = 'https://booklips.pl/premiery-i-zapowiedzi/wielki-upadek-petera-handkego-gesta-znaczeniowo-opowiesc-o-kondycji-wspolczesnego-czlowieka/'
+    # link = 'https://booklips.pl/recenzje/mroczna-basniowosc/'
+    #link = 'https://booklips.pl/recenzje/koniec-swiata-to-tylko-poczatek/'
+ 
     html_text = requests.get(link).content
     soup = BeautifulSoup(html_text, 'lxml')
     
@@ -84,7 +123,7 @@ def dictionary_of_article(link):
     category = re.sub(r'(https?\:\/\/booklips\.pl\/)(\w*\-?\w*\-?\w*)(\/.*)', r'\2', link)
     content_of_article = soup.find('div', class_='entry')
     
-    text_of_article = [x.text.replace('\n', ' ') for x in content_of_article.find_all('p', class_=None)] #class None,aby nie brać tagów i kategorii, które znajdują się pod tekstem
+    text_of_article = [x.text.replace('\n', ' ') for x in content_of_article.find_all('p', class_=None)]
     if text_of_article:
         text_of_article = " ".join(text_of_article).strip()
     else:
@@ -96,7 +135,6 @@ def dictionary_of_article(link):
     else:
         tags = None
           
-    #buy_box = content_of_article.find(class_='bb-widget')
 
     external_links = [x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'(booklips)|(http://twitter.com/share)', x)]
     if external_links != []:
@@ -110,133 +148,92 @@ def dictionary_of_article(link):
         photos_links = ' | '.join(photos_links)
     else:
         photos_links = None
+             
     
-        
-    author = None   
-    author_of_book = None
-    title_of_book = None
-    rating = None
+    author = None 
+    for key,value in dictionary_of_authors.items():
+        if key in text_of_article: 
+            author = key
+        elif value in text_of_article: 
+            author = value
+
+
+
     title_of_adaptation = None
-
-    
-    #Informacje dla recenzji:
-    if category == 'recenzje':
-        if re.search(r'^(.*)(\„\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\”)(\,\stłum\.)', text_of_article):
-            title_and_author_of_book = re.search(r'^(.*)(\„\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\”)(\,\stłum\.)', text_of_article).group(0)
-            title_of_book = re.sub(r'^(.*)(\„\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\”)(\,\stłum\.)', r'\2', title_and_author_of_book).strip()
-            author_of_book = re.sub(r'^(.*)(\„\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\”)(\,\stłum\.)', r'\1', title_and_author_of_book).strip()
-        else:
-            title_of_book = 'DO UZUPEŁNIENIA'
-            author_of_book = 'DO UZUPEŁNIENIA'
-        
-        #author = [x.findChildren('strong') for x in content_of_article.find_all('em')]
-        
-        if content_of_article.find('span', class_='bb-widget'):
-            author = content_of_article.find_all('p', class_=None)[-1]
-        else:
-            author = content_of_article.find_all('p', class_=None)[-2]
-      
-        if author:
-            author = author.text
-        else:
-            author = None
-         
-        if re.search(r'(Ocena\:\s\d\,?\d?\s?\/\s\d{2})', text_of_article):
-            rating = re.search(r'(Ocena\:\s\d\,?\d?\s?\/\s\d{2})', text_of_article).group(0).replace('Ocena: ', '')
-        else:
-            rating = None
-            
-    if category == 'czytelnia':
-        if re.search(r'fragmenty-ksiazek', link):
-            title_and_author_of_book = [x.text for x in content_of_article.find_all('strong') if re.findall(r'„[\p{L}\s\']*”', x.text)]
-            if len(title_and_author_of_book) >= 2:
-                title_and_author_of_book = "".join(title_and_author_of_book[-1].strip())
-                title_of_book = re.sub(r'^(.*)(„[\p{L}\s\']*”)$', r'\2', title_and_author_of_book).strip()
-                author_of_book = re.sub(r'^(.*)(„[\p{L}\s\']*”)$', r'\1', title_and_author_of_book).strip()
-            else:
-                title_of_book = None
-                author_of_book = None
-        else:
-            title_of_book = None
-            author_of_book = None
-    
-
-   
     if category == 'adaptacje':
         if re.search(r'\„.*”', title_of_article):
             title_of_adaptation = re.search(r'\„.*”', title_of_article).group(0)
         else: 
-            title_of_adaptation = None
-            
-        if re.search(r'\[am\]', text_of_article):
-            author = ' Artur Maszota [am]'
-        elif re.search(r'\[edm\]', text_of_article):
-            author = 'Emilia Dulczewska-Maszota [edm]'
-        elif re.search(r'Artur Maszota', text_of_article):
-            author = 'Artur Maszota [am]'
-        elif re.search(r'\[kch\,am\]', text_of_article):
-            author = 'Karolina Chymkowska | Artur Maszota | [kch,am]'
-        elif re.search(r'\[am,mw\]', text_of_article):
-            author = 'Artur Maszota | Mariusz Wojteczek | [am,mw]'
-        elif re.search(r'\[aw,am\]', text_of_article):
-            author = 'Anna Wyrwik | Artur Maszota | [aw,am]'
-        elif re.search(r'\[mw\]', text_of_article):
-            author = 'Mariusz Wojteczek [mw]'     
-        else:
-            author = None
+            title_of_adaptation = 'DO UZUPEŁNIENIA'
     
     
-    if category == 'artykuly':
-        if re.search(r'(\p{Lu}\p{L}*\s\p{Lu}\p{L}*$)', text_of_article):
-            author = re.search(r'(\p{Lu}\p{L}*\s\p{Lu}\p{L}*$)', text_of_article).group(0)
-        else:
-            author = None
+    if re.search(r'(https:\/\/booklips\.pl\/adaptacje\/)(film|muzyka|sluchowiska|teatr|gry)(\/.*)', link):
+        type_of_adaptation = re.sub(r'(https:\/\/booklips\.pl\/adaptacje\/)(film|muzyka|sluchowiska|teatr|gry)(\/.*)', r'\2', link)
+    else:
+        type_of_adaptation = None
+
+
+    title_of_book = None
+    author_of_book = None
+    if category == 'recenzje':
+        if re.search(r'^(.*)(\„\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\s?\p{L}*\,?\”)(\,\s)(tłum|wyd)(\.)', text_of_article):
+            title_and_author_of_book = re.search(r'^(.*)(\„\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\s?\p{L}*\,?\”)(\,\s)(tłum|wyd)(\.)', text_of_article).group(0)
+            title_of_book = re.sub(r'^(.*)(\„\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\,?\s?\p{L}*\”)(\,\stłum\.)', r'\2', title_and_author_of_book).strip()
+            author_of_book = re.sub(r'^([\p{L}\s\,\-\'\.]*)(„.*)',r'\1', text_of_article).strip()
             
-    if category == 'biurka-polskich-pisarzy' or 'biurka-polskich-pisarzy':
-        if re.search(r'(Biurka\spolskich\s)(pisarzy|komiksiarzy)(\:\s)(.*)', title_of_article):
-            related = re.sub(r'(Biurka\spolskich\s)(pisarzy|komiksiarzy)(\:\s)(.*)', r'\4', title_of_article)
         else:
-            related = None
+            title_of_book = 'DO UZUPEŁNIENIA'
+            author_of_book = 'DO UZUPEŁNIENIA'
+       
+    
+    if category == 'premiery-i-zapowiedzi':
+        if re.search(r'„.*”', title_of_article):
+            title_of_book = re.search(r'„.*”', title_of_article).group(0)
+
+    
+    #if re.search(r'fragmenty-ksiazek', link):
+    if category == 'czytelnia':
+        title_and_author_of_book = [x.text for x in content_of_article.find_all('strong') if re.findall(r'„[\p{L}\s\']*”', x.text)]
+        if len(title_and_author_of_book) >= 2:
+            title_and_author_of_book = "".join(title_and_author_of_book[-1].strip())
+            title_of_book = re.sub(r'^(.*)(„[\p{L}\s\']*”)$', r'\2', title_and_author_of_book).strip()
+            author_of_book = re.sub(r'^(.*)(„[\p{L}\s\']*”)$', r'\1', title_and_author_of_book).strip()
+        else:
+            title_of_book = 'DO UZUPEŁNIENIA'
+            author_of_book = 'DO UZUPEŁNIENIA'
+   
+    if re.search(r'czytelnia\/(listy|przedruki|opowiadania|wiersze|fragmenty-ksiazek)', link):   
+        contributor = author
+        author = None
+    else:
+        contributor = None    
         
-            
-        if re.search(r'\[am\]', text_of_article):
-            author = 'Artur Maszota [am]'
-        elif re.search(r'Artur Maszota', text_of_article):
-            author = 'Artur Maszota [am]'
-        else:
-            author = None
-    
-    if category == ' galeria' or category == 'newsy': 
         
-        if re.search(r'\[am\]', text_of_article):
-            author = 'Artur Maszota [am]'
-        elif re.search(r'Artur Maszota', text_of_article):
-            author = 'Artur Maszota [am]'
-        elif re.search(r'\[kch\,am\]', text_of_article):
-            author = 'Karolina Chymkowska | Artur Maszota | [kch,am]'
-        elif re.search(r'\[am,mw\]', text_of_article):
-            author = 'Artur Maszota | Mariusz Wojteczek | [am,mw]'
-        elif re.search(r'\[aw,am\]', text_of_article):
-            author = 'Anna Wyrwik | Artur Maszota | [aw,am]'
-        elif re.search(r'\[mw\]', text_of_article):
-            author = 'Mariusz Wojteczek [mw]'
-        elif re.search(r'\[edm\]', text_of_article):
-            author = 'Emilia Dulczewska-Maszota [edm]'
-        elif re.search(r'\[kch\]', text_of_article):
-            author = 'Karolina Chymkowska [kch]'
-        else:
-            author = None
+    rating = None        
+    if re.search(r'(Ocena\:\s\d\,?\d?\s?\/\s\d{2})', text_of_article):
+        rating = re.search(r'(Ocena\:\s\d\,?\d?\s?\/\s\d{2})', text_of_article).group(0).replace('Ocena: ', '')
+    else:
+        rating = None
+    
+    
+    related = None       
+    if re.search(r'(Biurka\spolskich\s)(pisarzy|komiksiarzy)(\:\s)(.*)', title_of_article):
+        related = re.sub(r'(Biurka\spolskich\s)(pisarzy|komiksiarzy)(\:\s)(.*)', r'\4', title_of_article)
+    else:
+        related = None
            
     
     dictionary_of_article = {'Link': link, 
                              'Data publikacji': new_date, 
                              'Autor': author,
+                             'Współtwórca': contributor,
                              'Kategoria': category,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
-                             'Autor książki': author_of_book,
-                             'Tytuł książki': title_of_book, 
+                             'Autor książki/dzieła': author_of_book,
+                             'Tytuł książki/dzieła': title_of_book, 
+                             'Typ adaptacji': type_of_adaptation,
                              'Tytuł adaptacji': title_of_adaptation,
                              'Wpis dotyczy': related,
                              'Ocena książki': rating,
@@ -312,4 +309,12 @@ for upload_file in upload_file_list:
 #Do analizy częć ksiażki i autorzy - inna struktura artykułów + wiecej informacji - nie mają dat publikacji - przeanalizować wszystklie linki, które zawierą element page
 #Autor w recenzji czasem kursywą! 
 # POdzielić linki z post i page na dwa arkusze i osobno zeskrobywać 
+
+
+#2022-11-16
+#Skoń♠czone na newsy. Dalej premiery-i-zapowiedzi (zastanowić się czy da sie wyciagnac autorów dzieł), dalej przeglad (wyciagnac czy to prasa, radio itp. i moze czego dotyczy)
+
+#Dodać sleep, bo czasami jest ConnectionError
+#Usprawnić pobieranie tytułów i autorów książek z kategorii Recenzja
+
 
