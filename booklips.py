@@ -30,67 +30,6 @@ def get_links_of_sitemap_links_posts(link):
  
 
 def dictionary_of_article_posts(link):
-    #link = 'https://booklips.pl/newsy/zmarl-kevin-oneill-wspoltworca-serii-komiksowej-liga-niezwyklych-dzentelmenow/'
-    #link = 'http://booklips.pl/czytelnia/opowiadania/nieznana-historia-milosna-pajaka-jednego-z-bohaterow-serii-kolory-zla-przeczytaj-opowiadanie-kryminalne-cytrusy-i-migdaly-malgorzaty-oliwii-sobczak/'
-    #link = 'https://booklips.pl/recenzje/w-pulapce-bez-wyjscia-recenzja-ksiazki-ruiny-scotta-smitha/' #recenzja
-    #link = 'https://booklips.pl/recenzje/suplement-do-masakry-recenzja-komiksu-rzeznia-numer-piec-ryana-northa-i-alberta-monteysa/' #recenzja
-    #link = 'https://booklips.pl/recenzje/powrot-krola-recenzja-ksiazki-basniowa-opowiesc-stephena-kinga/' #rec
-    #link = 'https://booklips.pl/recenzje/w-trybach-rewolucji-recenzja-komiksu-wolnosc-albo-smierc-aleksandry-herzyk/' #rec.
-    #link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/dluga-podroz-pewnej-opowiesci-przeczytaj-fragment-miasta-w-chmurach-anthonyego-doerra/' #czyt.
-    #link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/brutalnie-szczera-opowiesc-o-relacji-miedzy-umierajaca-matka-a-dorosla-corka-przeczytaj-fragment-ksiazki-ostatni-raz-helgi-flatland/'
-    # link = 'https://booklips.pl/wywiady/przerwac-milczenie-opowiescia-rozmowa-z-carolina-de-robertis-autorka-cantoras/' #wywiad
-    
-    # link = 'https://booklips.pl/adaptacje/film/amazon-studios-prezentuje-drugi-zwiastun-serialu-wladca-pierscieni-pierscienie-wladzy/' #adaptacja filmowa
-    #link = 'https://booklips.pl/recenzje/wykrecone-na-druga-strone-recenzja-komiksu-zasada-trojek-tomasza-spella/' # rec.
-    #link = 'https://booklips.pl/recenzje/historia-o-ogromnym-potencjale-recenzja-ksiazki-czarne-skrzydla-czasu-diane-setterfield/'
-    # link = 'https://booklips.pl/adaptacje/film/zwiastun-filmu-oficer-i-szpieg-romana-polanskiego-nakreconego-na-podstawie-powiesci-roberta-harrisa/'
-    # link = 'https://booklips.pl/artykuly/kaznodzieja-festiwal-przemocy-i-brutalnosci/'
-    #link = 'https://booklips.pl/artykuly/wspolczesny-bajarz-terry-pratchett/'
-    # link = 'https://booklips.pl/biurka-polskich-pisarzy/filip-zawada/'
-    # link = 'https://booklips.pl/ciekawostki/dlaczego-henryk-sienkiewicz-otrzymal-nobla-i-jak-do-tego-doszlo-ze-nie-podzielil-sie-nagroda-z-eliza-orzeszkowa/'
-    # link = 'https://booklips.pl/ciekawostki/dlaczego-a-j-finn-publikuje-pod-pseudonimem-wyjasniamy-zagadke-autora-kobiety-w-oknie/'
-    # link = 'https://booklips.pl/ciekawostki/fantastyczny-wywiad-z-michelem-houellebekiem/'
-    # link = 'https://booklips.pl/ciekawostki/ostatni-wiersz-charlesa-bukowskiego-przeslany-faksem/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/gra-w-pilke-ludzka-czaszka-przeczytaj-fragment-powiesci-bog-tak-chcial-arka-gieszczyka/'
-    #link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/akcja-wisla-motywem-przewodnim-nowej-powiesci-roberta-nowakowskiego-przeczytaj-przed-premiera-fragment-ojczyzny-jablek/'
-    #link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/o-dwoch-kobietach-fragment-uhonorowanej-nagroda-literacka-unii-europejskiej-powiesci-wyspa-krach-iny-wylczanowej/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/kultowa-zazi-w-metrze-raymonda-queneau-dostepna-w-ksiegarniach-przeczytaj-poczatek-ksiazki/'
-    #link = 'https://booklips.pl/galeria/eros-i-tanatos-na-ilustracjach-z-1934-roku-do-kwiatow-zla-charlesa-baudelairea/'
-    #link = 'https://booklips.pl/newsy/zlodziej-manuskryptow-zatrzymany-przez-fbi-od-ponad-pieciu-lat-podszywal-sie-pod-przedstawicieli-branzy-literackiej-by-zyskac-dostep-do-ksiazek-przed-premiera/'
-    # link = 'https://booklips.pl/newsy/w-nowym-albumie-lucky-luke-bedzie-walczyl-z-rasizmem-na-glebokim-poludniu/'
-    # link = 'https://booklips.pl/adaptacje/film/zakonczono-zdjecia-do-filmu-na-podstawie-ksiazki-teczowe-san-francisco-alysii-abbott-za-produkcje-odpowiada-sofia-coppola/'
-    # link = 'https://booklips.pl/adaptacje/film/superbohaterowie-filmowa-historia-o-zwiazkach-i-roli-jaka-odgrywa-w-nich-czas-ktora-paolo-genovese-nakrecil-na-podstawie-wlasnej-powiesci/'
-    #link = 'https://booklips.pl/adaptacje/film/marcin-dorocinski-w-roli-edwarda-popielskiego-premiera-serialu-erynie-borysa-lankosza-juz-25-pazdziernika/'
-    #link = 'https://booklips.pl/biurka-polskich-pisarzy/jaroslaw-maslanek/'
-    # link = 'https://booklips.pl/adaptacje/film/pierwszy-zwiastun-filmu-ziarno-prawdy-na-podstawie-powiesci-zygmunta-miloszewskiego/'
-    # link = 'https://booklips.pl/ciekawostki/albert-einstein-wyjasnia-dlaczego-warto-czytac-klasykow/'
-    # link = 'https://booklips.pl/ciekawostki/najlepszy-dowod-uznania-jaki-maurice-sendak-otrzymal-od-malego-czytelnika/'
-    # link = 'https://booklips.pl/newsy/marianna-kijanowska-dziekuje-za-nagrode-herberta-2022-na-gale-nie-mogla-przyjechac-z-powodow-zdrowotnych/'
-    # link = 'https://booklips.pl/czytelnia/listy/thomas-wolfe-opisuje-pijackie-przezycie-z-oktoberfestu-w-1928-roku/'
-    # link = 'https://booklips.pl/premiery-i-zapowiedzi/wielki-upadek-petera-handkego-gesta-znaczeniowo-opowiesc-o-kondycji-wspolczesnego-czlowieka/'
-    # link = 'https://booklips.pl/recenzje/mroczna-basniowosc/'
-    #link = 'https://booklips.pl/recenzje/koniec-swiata-to-tylko-poczatek/'
-    #link = 'https://booklips.pl/czytelnia/opowiadania/czy-roxane-gay-wywola-podobne-kontrowersje-jak-smarzowski-przeczytaj-opowiadanie-zly-ksiadz-ze-zbioru-histeryczki/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/bronislaw-pilsudski-wsrod-ajnow-fragment-powiesci-akan-pawla-gozlinskiego/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/przeczytaj-fragment-powiesci-a-hipopotamy-zywcem-sie-ugotowaly-williama-s-burroughsa-i-jacka-kerouaca/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/fragment-powiesci-potomstwo-jacka-ketchuma/'
-    # link = 'https://booklips.pl/czytelnia/opowiadania/maciej-gierszewski-pani-kocikowa/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/fragment-powiesci-wampir-z-mo-andrzeja-pilipiuk/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/kultowa-zazi-w-metrze-raymonda-queneau-dostepna-w-ksiegarniach-przeczytaj-poczatek-ksiazki/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/fragment-powiesci-zywe-trupy-droga-do-woodbury-kirkmana-i-bonansingi/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/fragment-powiesci-kobieta-w-1000o-c-hallgrimura-helgasona/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/przeczytaj-fragment-biografii-grace-ksiezna-monako-jeffreya-robinsona/'
-    # link = 'https://booklips.pl/czytelnia/fragmenty-ksiazek/karol-i-max-rozmawiaja-o-sprawach-ostatecznych-fragment-powiesci-glacier-express-9-15-janusza-majewskiego/'
-    # link = 'https://booklips.pl/przeglad/radio/85-rocznica-urodzin-marka-nowakowskiego-radiowa-dwojka-zaprasza-na-serie-audycji-i-sluchowisk-poswieconych-pisarzowi/'
-    # link = 'https://booklips.pl/recenzje/sledztwo-ktore-ciagnie-sie-jak-makaron/'
-    # link = 'https://booklips.pl/recenzje/kafka-do-potegi-kusturicy/'
-    # link = 'https://booklips.pl/recenzje/raport-z-oblezonego-miasta-recenzja-komiksu-dmz-strefa-zdemilitaryzowana-tom-1-briana-wooda-i-riccarda-burchielliego/'
-    # #link = 'https://booklips.pl/recenzje/show-jima-czyli-historia-taty-muppetow/'
-    # #link = 'https://booklips.pl/recenzje/wejsc-w-umysl-agenta-chaosu/'
-    # link = 'https://booklips.pl/recenzje/stary-dobry-swiat-nie-byl-nigdy-dobry/'
-    # link = 'https://booklips.pl/recenzje/metropolia-z-piekielnej-otchlani/'
-    #link = 'https://booklips.pl/recenzje/jasniejaca-prawda-wydobyta-z-mrokow-prowincji/'
- 
     html_text = requests.get(link).content
     soup = BeautifulSoup(html_text, 'lxml')
     
@@ -240,12 +179,8 @@ def dictionary_of_article_posts(link):
     all_results_posts.append(dictionary_of_article)
     
 
-#re.search(r'^https:\/\/booklips\.pl\/(autorzy|wydawcy|ksiazki|katalog|komiksy|zasady-korzystania|reklama|regulamin-konkursow|regulamin-konkursow-na-facebooku-twitterze-instagramie|o-nas|redakcja)\/\w\/$', link):    
-
-
 
 def get_links_of_sitemap_links_pages(link):
-    #link = 'https://booklips.pl/sitemap.xml'
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     links = [x.text for x in soup.find_all('loc') if not re.findall(r'(https\:\/\/booklips\.pl\/sitemap)(-pt-post|-misc)(-\d{4}-\d{2})?(\.xml)', x.text)] 
@@ -259,12 +194,6 @@ def get_links_of_sitemap_links_pages(link):
     return all_articles_links_pages    
 
 def links_of_pages_without_unnecessaries(link):
-    #link = 'https://booklips.pl/autorzy/'
-    #link = 'https://booklips.pl/autorzy/a/'
-        
-    # if not re.findall(r'autorzy\/\w?\/?$', link):
-    #     all_articles_links_pages_without_unnecessaries.append(link)
-    
     if not re.search(r'^https:\/\/booklips\.pl\/(autorzy|wydawcy|ksiazki|katalog|komiksy|zasady-korzystania|reklama|regulamin-konkursow|regulamin-konkursow-na-facebooku-twitterze-instagramie|o-nas|redakcja)\/\w?\d?\/?$', link):
         all_articles_links_pages_without_unnecessaries.append(link)
        
@@ -273,11 +202,6 @@ def links_of_pages_without_unnecessaries(link):
 
 
 def dictionary_of_article_pages(link):
-    
-    # link = 'https://booklips.pl/ksiazki/inna-dusza/'
-    link = 'https://booklips.pl/komiksy/moj-syn/'
-    link = 'https://booklips.pl/ksiazki/klub-julietty/'
- 
     html_text = requests.get(link).content
     soup = BeautifulSoup(html_text, 'lxml')
     
@@ -289,7 +213,13 @@ def dictionary_of_article_pages(link):
         title_of_article = None
         
         
-    category = re.search(r'(?<=https?\:\/\/booklips\.pl\/)(\w*\-?\w*\-?\w*)(?=\/.*)', link).group(0)
+    category = re.search(r'(?<=https?\:\/\/booklips\.pl\/)(\w*\-?\w*\-?\w*)(?=\/.*)', link)
+    if category: 
+        category = re.search(r'(?<=https?\:\/\/booklips\.pl\/)(\w*\-?\w*\-?\w*)(?=\/.*)', link).group(0)
+    else:
+        category = None
+        
+        
     content_of_article = soup.find('div', class_='entry')
     
     text_of_article = [x.text.replace('\n',' ') for x in content_of_article.find_all('p', class_=None)]
@@ -322,13 +252,19 @@ def dictionary_of_article_pages(link):
     
     if text_of_article != None and (category == 'ksiazki' or category == 'komiksy'): 
 
-        if re.search(r'(?<=Scenariusz i rysunki:\s|Autor:\s|Scenariusz:\s)(\p{L}*\.?\s\p{L}*\.?\-?\s*\p{L}*\s*\p{L}*\s*\p{L}*\s*)(?=Tłumaczenie:)', text_of_article):
-            author_of_book = re.search(r'(?<=Scenariusz i rysunki:\s|Autor:\s)(\p{L}*\.?\s\p{L}*\.?\-?\s*\p{L}*\s*\p{L}*\s*\p{L}*\s*)(?=Tłumaczenie:)', text_of_article).group(0).strip()
+        if re.search(r'(?<=.cenariusz i rysunki:\s|Autor:\s|.cenariusz:\s|Autorzy:\s)(\p{L}*\.?\-?\s\p{L}*\.?\,?\-?\s*\p{L}*\s*\p{L}*\,?\s*\p{L}*\s*)(?=Tłumaczenie:|.ysunki:|Współpraca:|Kolor:|Ilustracje:|Wstęp:)', text_of_article):
+            author_of_book = re.search(r'(?<=.cenariusz i rysunki:\s|Autor:\s|.cenariusz:\s|Autorzy:\s)(\p{L}*\.?\-?\s\p{L}*\.?\,?\-?\s*\p{L}*\s*\p{L}*\,?\s*\p{L}*\s*)(?=Tłumaczenie:|.ysunki:|Współpraca:|Kolor:|Ilustracje:|Wstęp:)', text_of_article).group(0).strip()
+        else:
+            author_of_book = 'DO UZUPEŁNIENIA'
+            
         title_of_book = title_of_article
+        
         if re.search(r'(?<=Opis:)(.*)(?=Materiały o .*)', text_of_article):
             description_of_book = re.search(r'(?<=Opis:)(.*)(?=Materiały o .*)', text_of_article).group(0).strip()
+            
         if re.search(r'(?<=ISBN )[\d\-]*', text_of_article):
             isbn = re.search(r'(?<=ISBN )[\d\-]*', text_of_article).group(0)
+            
         if re.search(r'(?<=Rok wydania:\s)\w*\s\d{4}', text_of_article):
             year_of_publication = re.search(r'(?<=Rok wydania:\s)\w*\s\d{4}', text_of_article).group(0)
         
@@ -342,8 +278,6 @@ def dictionary_of_article_pages(link):
                              'Opis książki': description_of_book,
                              'ISBN': isbn,
                              'Linki zewnętrzne': external_links,
-                             'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img')] else False,
-                             'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
                              'Linki do zdjęć': photos_links
                              }
 
@@ -414,15 +348,15 @@ with ThreadPoolExecutor() as excecutor:
 
 
 
-
-with open(f'booklips_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f)        
+with open(f'booklips_posts_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results_posts, f)        
+with open(f'booklips_pages_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results_pages, f)       
 
     
 df_posts = pd.DataFrame(all_results_posts).drop_duplicates()
 df_posts["Data publikacji"] = pd.to_datetime(df_posts["Data publikacji"]).dt.date
 df_posts = df_posts.sort_values('Data publikacji', ascending=False)
-
 
 df_pages = pd.DataFrame(all_results_pages).drop_duplicates()
 
@@ -439,23 +373,15 @@ with pd.ExcelWriter(f'booklips_{datetime.today().date()}.xlsx', engine='xlsxwrit
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f'bezprzeginania_{datetime.today().date()}.xlsx', f'bezprzeginania_{datetime.today().date()}.json']
+upload_file_list = [f'booklips_{datetime.today().date()}.xlsx', f'booklips_posts_{datetime.today().date()}.json', f'booklips_pages_{datetime.today().date()}.json']
+
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
 	gfile.SetContentFile(upload_file)
 	gfile.Upload()  
 
 
-#NOTATKI
 
-#Do analizy częć ksiażki i autorzy - inna struktura artykułów + wiecej informacji - nie mają dat publikacji - przeanalizować wszystklie linki, które zawierą element page
-# POdzielić linki z post i page na dwa arkusze i osobno zeskrobywać 
-
-
-#2022-11-17
-#Poprawić dane w pages w kat. ksiazki/komiksy
-
-#Dodać sleep, bo czasami jest ConnectionError
 
 
 
