@@ -69,7 +69,12 @@ def dictionary_of_article(link):
     # browser = start_chrome(link, headless=True)
     # soup = BeautifulSoup(browser.page_source, 'html.parser')
 
+
+
     # path = 'C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe'
+    # path_2 = "C:\\Users\\Barbara Wachek\\Desktop\\SeleniumDrivers\\chromedriver.exe"
+    
+    
     # options = webdriver.ChromeOptions()
     # #options.add_argument('--ignore-certificate-errors')
     # #options.add_argument('--incognito')
