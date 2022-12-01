@@ -53,19 +53,28 @@ def dictionary_of_article(link):
     #link = 'https://booklips.pl/newsy/znamy-finalistow-gdanskiej-nagrody-literackiej-europejski-poeta-wolnosci-2024/'
     
     
-    # html_text = requests.get(link).content
+    # html_text = requests.get(link).text
     # soup = BeautifulSoup(html_text, 'html.parser')
+    
+    #requests.get(link).status_code
+
+    driver = webdriver.Chrome()
+    url = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
+    driver.get(url)
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    driver.quit()
+    print(soup.prettify())
 
     
     # browser = start_chrome(link, headless=True)
     # soup = BeautifulSoup(browser.page_source, 'html.parser')
 
-    path = 'C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe'
-    options = webdriver.ChromeOptions()
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument('--incognito')
-    options.add_argument('--headless')
-    driver = webdriver.Chrome(path, options=options)
+    # path = 'C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe'
+    # options = webdriver.ChromeOptions()
+    # #options.add_argument('--ignore-certificate-errors')
+    # #options.add_argument('--incognito')
+    # options.add_argument('--headless')
+    # driver = webdriver.Chrome(path, options=options)
 
     driver.get('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
     page_source = driver.page_source
@@ -222,7 +231,6 @@ def dictionary_of_article(link):
 #%%main
 
 sitemap_links = get_sitemap_links('https://culture.pl/pl/sitemap.xml')    
-
 
 all_articles_links = []
 with ThreadPoolExecutor() as excecutor:
