@@ -8,8 +8,8 @@ from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+#from pydrive.auth import GoogleAuth
+#from pydrive.drive import GoogleDrive
 import time
 
 
@@ -21,7 +21,7 @@ from selenium import webdriver
 # from requests_html import HTMLSession
 
 
-from helium import start_chrome
+#from helium import start_chrome
 from time import mktime
 
 
@@ -61,6 +61,7 @@ def dictionary_of_article(link):
     driver = webdriver.Chrome()
     url = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
     driver.get(url)
+    
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     driver.quit()
     print(soup.prettify())
@@ -91,7 +92,7 @@ def dictionary_of_article(link):
     # soup = BeautifulSoup(browser.page_source, 'html.parser')
     # browser.close()
     
-    
+    date_of_publication = ''
     date_of_publication = soup.find('div', class_='published')
     if date_of_publication: 
         date_of_publication = date_of_publication.text 
