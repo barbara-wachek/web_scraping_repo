@@ -21,10 +21,16 @@ from selenium import webdriver
 # from requests_html import HTMLSession
 
 
-#from helium import start_chrome
+from helium import *
 from time import mktime
+from selenium.webdriver.chrome.options import Options
 
 
+
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 
 
 #%% def
@@ -47,50 +53,31 @@ def get_article_links_from_sitemap_links(link):
 
 def dictionary_of_article(link): 
     
-    link = 'https://culture.pl/pl/artykul/10-architektonicznych-atrakcji-kielecczyzny'
+    # link = 'https://culture.pl/pl/artykul/10-architektonicznych-atrakcji-kielecczyzny'
+    # link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
     link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
     
-    #link = 'https://booklips.pl/newsy/znamy-finalistow-gdanskiej-nagrody-literackiej-europejski-poeta-wolnosci-2024/'
+#for link in tqdm(all_articles_links):
+    
+    chrome_options = Options()
+    chrome_options.headless = True
+    
+    driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
+    driver.get(link)
+    time.sleep(4)
+    soup = BeautifulSoup(driver.page_source, 'lxml')
     
     
-    # html_text = requests.get(link).text
-    # soup = BeautifulSoup(html_text, 'html.parser')
     
-    #requests.get(link).status_code
+    #headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
+    browser = start_chrome(link, headless=True)
+    time.sleep(3)
 
-    driver = webdriver.Chrome()
-    url = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
-    driver.get(url)
+    soup = BeautifulSoup(browser.page_source, 'lxml')
     
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    driver.quit()
-    print(soup.prettify())
+    
+    
 
-    
-    # browser = start_chrome(link, headless=True)
-    # soup = BeautifulSoup(browser.page_source, 'html.parser')
-
-
-
-    # path = 'C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe'
-    # path_2 = "C:\\Users\\Barbara Wachek\\Desktop\\SeleniumDrivers\\chromedriver.exe"
-    
-    
-    # options = webdriver.ChromeOptions()
-    # #options.add_argument('--ignore-certificate-errors')
-    # #options.add_argument('--incognito')
-    # options.add_argument('--headless')
-    # driver = webdriver.Chrome(path, options=options)
-
-    driver.get('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
-    page_source = driver.page_source
-    soup = BeautifulSoup(page_source, 'lxml')
-    
-    
-    # browser = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe")
-    # browser.get(link)
-    # soup = BeautifulSoup(browser.page_source, 'html.parser')
-    # browser.close()
     
     date_of_publication = ''
     date_of_publication = soup.find('div', class_='published')
@@ -135,7 +122,7 @@ def dictionary_of_article(link):
         
     
         
-    text_of_article = [x.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]
+    text_of_article = [x.p.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]
     if text_of_article:
         text_of_article = " | ".join(text_of_article).strip()
     else:
@@ -181,59 +168,6 @@ def dictionary_of_article(link):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
-# path = 'C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe'
-# # #driver = webdriver.PhantomJS(path)
-# driver = webdriver.Chrome(path)
-# driver.get(link)
-# html = driver.find_element_by_tag_name('h1').get_attribute('author-name')
-
-# driver = webdriver.Chrome(path)
-# driver.get(link)
-# time.sleep(5)
-# htmlSource = driver.page_source
-# html = driver.find_element_by_tag_name('h1').get_attribute('author-name')
-
-# driver.quit()
-
-# link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
-# session = HTMLSession()
-# r = session.get(link)
-
-# r.html.render()
-
-
-
-
-# session = HTMLSession()
-# r = session.get('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
-# soup = r.html.arender()
-# print(soup)
-
-# r.html.links
-# r.html.find('#span')
-
-# #'<time>25</time>' #This is the result.
-
-
-
-
-
 #%%main
 
 sitemap_links = get_sitemap_links('https://culture.pl/pl/sitemap.xml')    
@@ -245,7 +179,7 @@ with ThreadPoolExecutor() as excecutor:
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(get_article_links_from_sitemap_links, sitemap_links), total=len(sitemap_links)))   
+    list(tqdm(excecutor.map(dictionary_of_article, all_articles_links), total=len(all_articles_links)))   
 
 
 
