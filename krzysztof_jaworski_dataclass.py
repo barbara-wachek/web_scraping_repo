@@ -1,17 +1,31 @@
-#%% import 
-from __future__ import unicode_literals
+#%% import
+from dataclasses import dataclass, asdict
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import regex as re
+from tqdm import tqdm
 import time
-from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 from functions import date_change_format_long, get_links
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+
+
+#%%dataclass
+@dataclass
+class Record: 
+    Link: str
+    Date_of_publication: str
+    Author: str
+    Title_of_article: str
+    Text_of_article: str
+    Tags: str
+    External_links: str
+    Photos_links: str
+
 
 #%%def
 
@@ -20,13 +34,13 @@ def get_article_pages(link):
     soup = BeautifulSoup(html_text, 'lxml')
     sitemap_links = [e.text for e in soup.find_all('loc')]
     articles_links.extend(sitemap_links)   
-    
 
-def dictionary_of_article(article_link):
-    html_text = requests.get(article_link).text
+
+def dictionary_of_article(link): 
+    html_text = requests.get(link).text
     while 'Error 503' in html_text:
         time.sleep(2)
-        html_text = requests.get(article_link).text
+        html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
     author = soup.find('a', class_='g-profile')
@@ -34,7 +48,6 @@ def dictionary_of_article(article_link):
         author = author.span.text
     else:
         author = None
-    
     
     title_of_article = soup.find('h3', class_='post-title entry-title')
     if title_of_article:
@@ -48,7 +61,6 @@ def dictionary_of_article(article_link):
         new_date = date_change_format_long(date_of_publication.text)
     else:
         new_date = None
-    
     
     content_of_article = soup.find('div', class_='post-body entry-content')
     
@@ -80,38 +92,38 @@ def dictionary_of_article(article_link):
         photos_links = None
 
 
-    dictionary_of_article = {'Link': article_link,
-                             'Data publikacji': new_date,
-                             'Autor': author,
-                             'Tytuł artykułu': title_of_article,
-                             'Tekst artykułu': text_of_article,
-                             'Tagi': tags,
-                             'Linki zewnętrzne': external_links,
-                             'Linki do zdjęć': photos_links}
-        
-
-    all_results.append(dictionary_of_article)
-
-
-
+    new_record = Record(Link=link,
+        Date_of_publication=new_date,
+        Author=author,
+        Title_of_article=title_of_article,
+        Text_of_article=text_of_article,
+        Tags=tags,
+        External_links=external_links,
+        Photos_links=photos_links
+        )
+      
+    all_results.append(asdict(new_record))
 
 #%%main
+
 sitemap_links = get_links('https://krzysztofjaworski.blogspot.com/sitemap.xml')
 
 articles_links = []    
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_article_pages, sitemap_links),total=len(sitemap_links)))
-    
+
+
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
 
+df = pd.DataFrame(all_results).drop_duplicates()
+df = df.sort_values('Date_of_publication', ascending=False)
+
 with open(f'krzysztof_jaworski_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)    
 
-df = pd.DataFrame(all_results).drop_duplicates()
-df = df.sort_values('Data publikacji', ascending=False)
    
 with pd.ExcelWriter(f"krzysztof_jaworski_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
@@ -139,9 +151,3 @@ for upload_file in upload_file_list:
 
 
 
-
-
-
-
-    
-    

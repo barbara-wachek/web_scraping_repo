@@ -46,15 +46,40 @@ class BasicCrawler:
 
 
 #TESTOWA
-class DictionaryOfArticle:
+class Record:
 
-    def __init__(self, url, date, author, title, text, tags): #Dodać więcej kolumn (jak nie ma to będzie None wpisywane?)
+    def __init__(self, url: str, date:str, author:str, title:str, text:str, tags:str, external_links:str, photos_links:str, title_of_spectacle:str, director:str, book_description:str, author_of_book:str, title_of_book:str, publisher:str, year_and_place_of_publication:str, work_description:str, second_title:str, publication_year:str, journal_number_and_year:str, additional_info:str, date_of_edition:str, audio_link:str, transcription:str, category:str, note_about_author:str, note:str, poems_titles:str, title_of_cycle:str, cycle_link:str, related:str): #Dodać więcej kolumn (jak nie ma to będzie None wpisywane?)
         self.url = url
         self.date = date
         self.author = author
         self.title = title
         self.text = text
         self.tags = tags
+        self.external_links = external_links
+        self.photos_links = photos_links
+        self.title_of_spectacle = title_of_spectacle
+        self.director = director
+        self.book_description = book_description
+        self.author_of_book = author_of_book
+        self.title_of_book = title_of_book
+        self.publisher = publisher
+        self.year_and_place_of_publication = year_and_place_of_publication
+        self.work_description = work_description
+        self.second_title = second_title 
+        self.publication_year = publication_year
+        self.journal_number_and_year = journal_number_and_year
+        self.additional_info = additional_info
+        self.date_of_edition = date_of_edition
+        self.audio_link = audio_link
+        self.transcription = transcription
+        self.category = category
+        self.note_about_author = note_about_author
+        self.note = note
+        self.poems_titles = poems_titles
+        self.title_of_cycle = title_of_cycle
+        self.cycle_link = cycle_link
+        self.related = related
+
 
     
     def create_dictionary(self):
@@ -72,6 +97,10 @@ class DictionaryOfArticle:
     def __string__(self):
         return dictionary_of_article
   
+
+
+
+
 
  #Do generowania raportów (uzupełnianie pliku z raportami)
    
