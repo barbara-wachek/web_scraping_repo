@@ -23,6 +23,9 @@ def get_article_pages(link):
     
 
 def dictionary_of_article(article_link):
+    # article_link = 'https://krzysztofjaworski.blogspot.com/2016/03/sobota-z-poezja-xix.html'
+    # article_link = 'https://krzysztofjaworski.blogspot.com/2016/03/sobota-z-poezja-xix.html'
+    # article_link = 'https://krzysztofjaworski.blogspot.com/2015/12/jaseka.html'
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
@@ -68,6 +71,24 @@ def dictionary_of_article(article_link):
     else:
         tags = None
 
+
+    comments = soup.find('div', class_='comments-content')
+    if comments:
+        comments_authors = [x.text for x in comments.find_all('cite', class_='user')]
+        list_of_comments = [x.text for x in comments.find_all('p', class_='comment-content')]
+       
+        
+        article_comments = []        
+        for a in comments_authors:
+            for c in list_of_comments:
+                author_and_comment = f'{a}: {c}'
+                article_comments.append(author_and_comment)
+                
+        article_comments = " | ".join(article_comments)
+        
+    else:
+        article_comments = None
+    
         
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'blogger|blogspot|krzysztofjaworski', x)])
@@ -86,6 +107,7 @@ def dictionary_of_article(article_link):
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
+                             'Komentarze': article_comments,
                              'Linki zewnętrzne': external_links,
                              'Linki do zdjęć': photos_links}
         

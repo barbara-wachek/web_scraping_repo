@@ -25,6 +25,7 @@ class Record:
     Tags: str
     External_links: str
     Photos_links: str
+    Article_comments: str
 
 
 #%%def
@@ -37,6 +38,7 @@ def get_article_pages(link):
 
 
 def dictionary_of_article(link): 
+    link = 'https://krzysztofjaworski.blogspot.com/2016/03/sobota-z-poezja-xix.html'
     html_text = requests.get(link).text
     while 'Error 503' in html_text:
         time.sleep(2)
@@ -80,7 +82,23 @@ def dictionary_of_article(link):
     else:
         tags = None
 
+   comments = soup.find('div', class_='comments-content')
+    if comments:
+        comments_authors = [x.text for x in comments.find_all('cite', class_='user')]
+        list_of_comments = [x.text for x in comments.find_all('p', class_='comment-content')]
+       
         
+        article_comments = []        
+        for a in comments_authors:
+            for c in list_of_comments:
+                author_and_comment = f'{a}: {c}'
+                article_comments.append(author_and_comment)
+                
+        article_comments = " | ".join(article_comments)
+        
+    else:
+        article_comments = None
+   
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'blogger|blogspot|krzysztofjaworski', x)])
     except (AttributeError, KeyError, IndexError):
@@ -99,7 +117,8 @@ def dictionary_of_article(link):
         Text_of_article=text_of_article,
         Tags=tags,
         External_links=external_links,
-        Photos_links=photos_links
+        Photos_links=photos_links,
+        Article_comments=article_comments
         )
       
     all_results.append(asdict(new_record))
