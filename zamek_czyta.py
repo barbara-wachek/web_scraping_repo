@@ -9,9 +9,10 @@ from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
-from functions import date_change_format_short, get_links
+from functions import date_change_format_short
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+
 
 #%%def
 
@@ -20,18 +21,44 @@ def get_links_from_sitemap(link):
     soup = BeautifulSoup(html_text, 'lxml')
     sitemap_links = [e.text for e in soup.find_all('loc') if not re.search(r'https\:\/\/www.zamekczyta.pl\/$', e.text)]
     articles_links.extend(sitemap_links)   
+
+def get_category_links_from_sitemap(link): 
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    sitemap_links = [e.text for e in soup.find_all('loc') if not re.search(r'https\:\/\/www.zamekczyta.pl\/$', e.text)]
+    category_links.extend(sitemap_links)       
+
+def generate_pages(link): 
+    format_link = re.sub(r'(https\:\/\/www\.zamekczyta\.pl\/)([\w\-]*)(\/page\/)(\d+)(\/)', r'\1\2\3\4\5', link)
+          
+    for number in range(1,30):
+        link = format_link+r'page/'+str(number)
+        generated_category_pages.append(link)  
     
+
+def verify_generated_pages(link):
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    
+    if not soup.find('p', class_='not-found'):
+        verified_generated_pages.append(link)
+        
+        
+def get_articles_links_with_category(link):
+    category = re.search(r'(?<=https\:\/\/www\.zamekczyta\.pl\/)([\w\-]*)(?=\/.*)', link).group(0)
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    articles_links = [x.a['href'] for x in soup.find_all('h2')]
+    articles_links_with_category = [{x:category} for x in articles_links]
+    return all_articles_links_with_category.extend(articles_links_with_category)
+
+
 def dictionary_of_article(link):
-    
-    #link = 'https://www.zamekczyta.pl/spoilery-apokalipsy/'
-    #link = 'https://www.zamekczyta.pl/monika-glosowitz-czytanie-dobro-luksusowe/'
-    link = 'https://www.zamekczyta.pl/kaliningrad-nadprodukcja-znaczen-paulina-siegien/'
-    link = 'https://www.zamekczyta.pl/pp-2019-krzysztof-siwczyk-trzy-wiersze/'
-    
+
     html_text = requests.get(link).text
     while 'Error 503' in html_text:
         time.sleep(2)
-        html_text = requests.get(article_link).text
+        html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
 
@@ -51,7 +78,7 @@ def dictionary_of_article(link):
 
     author = soup.find('p', attrs={'style':'text-align: right;'})
     if author:
-        author = soup.find('p', attrs={'style':'text-align: right;'}).text.title()
+        author = soup.find('p', attrs={'style':'text-align: right;'}).text.title().replace('\n', ' | ')
     else:
         author = None
     
@@ -88,15 +115,23 @@ def dictionary_of_article(link):
     else:
         book_description = None
     
+    if book_description != None:
+        title_of_book = re.search(r'(\„.*\”)(?=.*)', book_description)
+        if title_of_book:
+            title_of_book = re.search(r'(\„.*\”)(?=.*)', book_description).group(0)
+        else:
+            title_of_book = None
     
-    #Autor książki
-    #Tytuł książki
-    #Rok Wydnia
-    #Wydawnictwo
-    #tytuły wierszy (np. https://www.zamekczyta.pl/pp-2019-krzysztof-siwczyk-trzy-wiersze/)
+        edition_year = re.search(r'\d{4}$', book_description)
+        if edition_year:
+             edition_year = re.search(r'\d{4}$', book_description).group(0)
+        else:
+            edition_year = None
     
 
-        
+    
+    
+    
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'#|zamekczyta', x)])
     except (AttributeError, KeyError, IndexError):
@@ -107,12 +142,26 @@ def dictionary_of_article(link):
     except (AttributeError, KeyError, IndexError):
         photos_links = None
 
+    
+    category = None
+    for element in all_articles_links_with_category:
+        for k,v in element.items():
+            if k == link:
+                if category:     
+                    category = f'{category} | {v}'
+                else:
+                    category = v
+
 
     dictionary_of_article = {'Link': link,
                              'Data publikacji': new_date,
                              'Autor': author,
+                             'Kategoria': category,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
+                             'Opis książki': book_description,
+                             'Tytuł książki': title_of_book,
+                             'Rok wydania': edition_year,
                              'Tagi': tags,
                              'Nota u autorach': about_authors,
                              'Linki zewnętrzne': external_links,
@@ -122,7 +171,13 @@ def dictionary_of_article(link):
     all_results.append(dictionary_of_article)    
     
     
+
     
+#Spróbować pobrać tytuły wierszy (#tytuły wierszy (np. https://www.zamekczyta.pl/pp-2019-krzysztof-siwczyk-trzy-wiersze/)
+#Sprawdzić linki, gdzie Autor = None
+#przyjrzeć się brakowi opisów książek 
+#pobrać content podstron? 
+
     
     
 #%% main
@@ -131,15 +186,30 @@ sitemap_post = 'https://www.zamekczyta.pl/post-sitemap.xml'
 sitemap_page = 'https://www.zamekczyta.pl/page-sitemap.xml'
 
 
-
 articles_links = []
 get_links_from_sitemap('https://www.zamekczyta.pl/post-sitemap.xml')
+
+
+category_links = []
+get_category_links_from_sitemap('https://www.zamekczyta.pl/category-sitemap.xml')
+
+generated_category_pages = [] 
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(generate_pages, category_links),total=len(category_links)))
+
+verified_generated_pages = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(verify_generated_pages, generated_category_pages),total=len(generated_category_pages)))
+
+all_articles_links_with_category = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(get_articles_links_with_category, verified_generated_pages),total=len(verified_generated_pages)))
+#Niektóre linki się powtarzają - artykuły są przyporzadkowane do więcej niż jednej kategorii
 
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
-
 
 df = pd.DataFrame(all_results).drop_duplicates()
 df = df.sort_values('Data publikacji', ascending=False)
@@ -150,6 +220,32 @@ df = df.sort_values('Data publikacji', ascending=False)
 
 
 
+
+# with open(f'zamek_czyta_posts{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+#     json.dump(all_results_posts, f)        
+# with open(f'zamek_czyta_pages{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+#     json.dump(all_results_pages, f)       
+
+    
+   
+# with pd.ExcelWriter(f'zamek_czyta_{datetime.today().date()}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
+    # df_posts.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
+    # df_pages.to_excel(writer, 'Pages', index=False, encoding='utf-8')   
+    # writer.save()     
+   
+
+
+#%%Uploading files on Google Drive
+
+# gauth = GoogleAuth()           
+# drive = GoogleDrive(gauth)   
+      
+# upload_file_list = [f'booklips_{datetime.today().date()}.xlsx', f'booklips_posts_{datetime.today().date()}.json', f'booklips_pages_{datetime.today().date()}.json']
+
+# for upload_file in upload_file_list:
+# 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+# 	gfile.SetContentFile(upload_file)
+# 	gfile.Upload()  
 
 
 
