@@ -54,7 +54,15 @@ def get_articles_links_with_category(link):
 
 
 def dictionary_of_article(link):
-
+    #link = 'https://www.zamekczyta.pl/mroczna-fanaberia-prowadz-swoj-plug-przez-kosci-umarlych-olgi-tokarczuk/'
+    #link = 'https://www.zamekczyta.pl/pp-2019-kropka-dwukropek-wielokropek-czyli-o-engramach-marty-eloy-cichockiej/'
+    
+    # link = 'https://www.zamekczyta.pl/seryjni-poeci-agnieszka-wolny-hamkalo-wiersze/'
+    #link = 'https://www.zamekczyta.pl/pp-2019-agata-jablonska-trzy-wiersze/'
+    
+    link = 'https://www.zamekczyta.pl/zwierze-czyli-oskarzenie-tarsjusz-wislawy-szymborskiej/'
+    
+    
     html_text = requests.get(link).text
     while 'Error 503' in html_text:
         time.sleep(2)
@@ -76,9 +84,9 @@ def dictionary_of_article(link):
         title_of_article = None
 
 
-    author = soup.find('p', attrs={'style':'text-align: right;'})
+    author = soup.find_all('p', attrs={'style':'text-align: right;'}) 
     if author:
-        author = soup.find('p', attrs={'style':'text-align: right;'}).text.title().replace('\n', ' | ')
+        author =' | '.join([x.text.title().replace('\n', ' | ') for x in soup.find_all('p', attrs={'style':'text-align: right;'}) if x.text != '\xa0'])
     else:
         author = None
     
@@ -95,16 +103,18 @@ def dictionary_of_article(link):
         text_of_article = None
         
    
-    tags = [x.text for x in content_of_article.find_all('a') if re.search(r'\/tag\/', x['href'])]
-    if tags != '':
-        tags = " | ".join([x.text for x in content_of_article.find_all('a') if re.search(r'\/tag\/', x['href'])])
-    else:
-        tags = None
+    
+    if content_of_article:  
+        tags = [x.text for x in content_of_article.find_all('a') if re.search(r'\/tag\/', x['href'])]
+        if tags != '':
+            tags = " | ".join([x.text for x in content_of_article.find_all('a') if re.search(r'\/tag\/', x['href'])])
+        else:
+            tags = None
+    
 
-
-    about_authors = [x.text.replace('\xa0', ' ') for x in content_of_article.find_all('p') if re.match(r'^\p{Lu}{2,}\s[\p{Lu}\s]*(\–|\()', x.text)]
+    about_authors = [x.text.replace('\xa0', ' ') for x in content_of_article.find_all('p') if re.match(r'^\p{Lu}{2,}\s[\p{Lu}\s\-]*(\–|\()', x.text)]
     if about_authors != '':
-        about_authors = " | ".join([x.text.replace('\xa0', ' ') for x in content_of_article.find_all('p') if re.match(r'^\p{Lu}{2,}\s[\p{Lu}\s]*(\–|\()', x.text)])
+        about_authors = " | ".join([x.text.replace('\xa0', ' ') for x in content_of_article.find_all('p') if re.match(r'^\p{Lu}{2,}\s[\p{Lu}\s\-]*(\–|\()', x.text)])
     else:
         about_authors = None
     
@@ -129,9 +139,6 @@ def dictionary_of_article(link):
             edition_year = None
     
 
-    
-    
-    
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'#|zamekczyta', x)])
     except (AttributeError, KeyError, IndexError):
@@ -151,8 +158,25 @@ def dictionary_of_article(link):
                     category = f'{category} | {v}'
                 else:
                     category = v
+    
+    
+    if re.search(r'(wiersze$)|(wiersz$)', title_of_article):    
+        titles_of_poems = ' | '.join([x.text for x in content_of_article.find_all('strong')])
+    else: 
+        titles_of_poems = None
+    
 
-
+    if author==None and re.search(r'(^Seryjni)|(^PP)', title_of_article):
+        author = re.search(r'(?<=Seryjni Poeci\:\s)(.*)(?=\swiersz|wiersze)', title_of_article)
+        if author: 
+            author = re.search(r'(?<=Seryjni Poeci\:\s)(.*)(?=\swiersz|wiersze)', title_of_article).group(0)
+        elif re.search(r'(?<=PP\s\d{4}\:)(.*)(?=\swiersz|wiersze)', title_of_article):
+            author = re.search(r'(?<=PP\s\d{4}\:)(.*)(?=\swiersz|wiersze)', title_of_article).group(0)
+             
+    if author != None and re.search(r'\p{L}*\s\p{L}*\s\–\s(trzy|dwa)', author):
+        author = re.sub(r'(\p{L}*\s\p{L}*)(\s\–\s)(trzy|dwa)', r'\1', author).strip()         
+             
+             
     dictionary_of_article = {'Link': link,
                              'Data publikacji': new_date,
                              'Autor': author,
@@ -161,9 +185,10 @@ def dictionary_of_article(link):
                              'Tekst artykułu': text_of_article,
                              'Opis książki': book_description,
                              'Tytuł książki': title_of_book,
+                             'Tytuły wierszy': titles_of_poems,
                              'Rok wydania': edition_year,
                              'Tagi': tags,
-                             'Nota u autorach': about_authors,
+                             'Nota u autorach/twórcach': about_authors,
                              'Linki zewnętrzne': external_links,
                              'Linki do zdjęć': photos_links}
         
@@ -173,7 +198,6 @@ def dictionary_of_article(link):
     
 
     
-#Spróbować pobrać tytuły wierszy (#tytuły wierszy (np. https://www.zamekczyta.pl/pp-2019-krzysztof-siwczyk-trzy-wiersze/)
 #Sprawdzić linki, gdzie Autor = None
 #przyjrzeć się brakowi opisów książek 
 #pobrać content podstron? 
@@ -189,7 +213,6 @@ sitemap_page = 'https://www.zamekczyta.pl/page-sitemap.xml'
 articles_links = []
 get_links_from_sitemap('https://www.zamekczyta.pl/post-sitemap.xml')
 
-
 category_links = []
 get_category_links_from_sitemap('https://www.zamekczyta.pl/category-sitemap.xml')
 
@@ -204,7 +227,7 @@ with ThreadPoolExecutor() as excecutor:
 all_articles_links_with_category = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_articles_links_with_category, verified_generated_pages),total=len(verified_generated_pages)))
-#Niektóre linki się powtarzają - artykuły są przyporzadkowane do więcej niż jednej kategorii
+#Niektóre linki się powtarzają - artykuły są przyporzadkowane do więcej niż jednej kategorii. W funkcji dictionary_of_article do zmiennej category są brane wszystke kategorie odpowiadające linkowi. 
 
 
 all_results = []
