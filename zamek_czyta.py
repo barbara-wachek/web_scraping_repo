@@ -53,14 +53,11 @@ def get_articles_links_with_category(link):
     return all_articles_links_with_category.extend(articles_links_with_category)
 
 
-def dictionary_of_article(link):
-    #link = 'https://www.zamekczyta.pl/mroczna-fanaberia-prowadz-swoj-plug-przez-kosci-umarlych-olgi-tokarczuk/'
-    #link = 'https://www.zamekczyta.pl/pp-2019-kropka-dwukropek-wielokropek-czyli-o-engramach-marty-eloy-cichockiej/'
+def dictionary_of_article(link):    
     
-    # link = 'https://www.zamekczyta.pl/seryjni-poeci-agnieszka-wolny-hamkalo-wiersze/'
-    #link = 'https://www.zamekczyta.pl/pp-2019-agata-jablonska-trzy-wiersze/'
-    
-    link = 'https://www.zamekczyta.pl/zwierze-czyli-oskarzenie-tarsjusz-wislawy-szymborskiej/'
+    # link = 'https://www.zamekczyta.pl/stala-joanna-lesiewicz/'
+    # link = 'https://www.zamekczyta.pl/biale-niewolnice-o-ksiazce-sluzace-do-wszystkiego/'
+    #link = 'https://www.zamekczyta.pl/poznan-poetow-piotr-macierzynski-ksiazka-kostnicy/'
     
     
     html_text = requests.get(link).text
@@ -119,25 +116,37 @@ def dictionary_of_article(link):
         about_authors = None
     
     
-    book_description = [x.text.replace('\xa0', ' ').strip() for x in content_of_article.find_all('p') if re.match(r'.*\„.*\”.*\d{4}$', x.text)]
+    category = None
+    for element in all_articles_links_with_category:
+        for k,v in element.items():
+            if k == link:
+                if category:     
+                    category = f'{category} | {v}'
+                else:
+                    category = v
+    
+
+    book_description = [x.text.replace('\xa0', ' ').strip() for x in content_of_article.find_all('p') if re.match(r'^(\„|\p{Lu}\p{Ll}).*\„?.*\”?.*\d{4}.?$', x.text)]
     if book_description != '':
-        book_description = " | ".join([x.text.replace('\xa0', ' ').strip() for x in content_of_article.find_all('p') if re.match(r'.*\„.*\”.*\d{4}$', x.text)])
+        book_description = " | ".join([x.text.replace('\xa0', ' ').strip() for x in content_of_article.find_all('p') if re.match(r'^(\„|\p{Lu}\p{Ll}).*\„.*\”.*\d{4}.?$', x.text)])
     else:
         book_description = None
+
     
+
     if book_description != None:
-        title_of_book = re.search(r'(\„.*\”)(?=.*)', book_description)
+        title_of_book = re.findall(r'(\„[\p{L}\d\s\=\.\,\?\!\-]*\”)', book_description)
         if title_of_book:
-            title_of_book = re.search(r'(\„.*\”)(?=.*)', book_description).group(0)
+            title_of_book = " | ".join(re.findall(r'(\„[\p{L}\d\s\=\.\,\?\!\-]*\”)', book_description))
         else:
             title_of_book = None
     
-        edition_year = re.search(r'\d{4}$', book_description)
+        edition_year = re.findall(r'2\d{3}', book_description)
         if edition_year:
-             edition_year = re.search(r'\d{4}$', book_description).group(0)
+            edition_year = " | ".join(re.findall(r'2\d{3}', book_description))
         else:
             edition_year = None
-    
+
 
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'#|zamekczyta', x)])
@@ -150,14 +159,7 @@ def dictionary_of_article(link):
         photos_links = None
 
     
-    category = None
-    for element in all_articles_links_with_category:
-        for k,v in element.items():
-            if k == link:
-                if category:     
-                    category = f'{category} | {v}'
-                else:
-                    category = v
+
     
     
     if re.search(r'(wiersze$)|(wiersz$)', title_of_article):    
@@ -196,12 +198,6 @@ def dictionary_of_article(link):
     all_results.append(dictionary_of_article)    
     
     
-
-    
-#Sprawdzić linki, gdzie Autor = None
-#przyjrzeć się brakowi opisów książek 
-#pobrać content podstron? 
-
     
     
 #%% main
@@ -238,37 +234,27 @@ df = pd.DataFrame(all_results).drop_duplicates()
 df = df.sort_values('Data publikacji', ascending=False)
 
 
-
-
-
-
-
-
-# with open(f'zamek_czyta_posts{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-#     json.dump(all_results_posts, f)        
-# with open(f'zamek_czyta_pages{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-#     json.dump(all_results_pages, f)       
-
-    
+with open(f'zamek_czyta_posts{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results, f, ensure_ascii=False)        
+     
    
-# with pd.ExcelWriter(f'zamek_czyta_{datetime.today().date()}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
-    # df_posts.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
-    # df_pages.to_excel(writer, 'Pages', index=False, encoding='utf-8')   
-    # writer.save()     
+with pd.ExcelWriter(f'zamek_czyta_{datetime.today().date()}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
+    df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
+    writer.save()     
    
 
 
 #%%Uploading files on Google Drive
 
-# gauth = GoogleAuth()           
-# drive = GoogleDrive(gauth)   
+gauth = GoogleAuth()           
+drive = GoogleDrive(gauth)   
       
-# upload_file_list = [f'booklips_{datetime.today().date()}.xlsx', f'booklips_posts_{datetime.today().date()}.json', f'booklips_pages_{datetime.today().date()}.json']
+upload_file_list = [f'zamek_czyta_{datetime.today().date()}.xlsx', f'zamek_czyta_posts{datetime.today().date()}.json']
 
-# for upload_file in upload_file_list:
-# 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
-# 	gfile.SetContentFile(upload_file)
-# 	gfile.Upload()  
+for upload_file in upload_file_list:
+ 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+ 	gfile.SetContentFile(upload_file)
+ 	gfile.Upload()  
 
 
 
