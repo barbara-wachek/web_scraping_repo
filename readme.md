@@ -23,3 +23,5 @@
 22. https://booklips.pl/
 23. https://culture.pl/pl
 24. https://krzysztofjaworski.blogspot.com/ (dwa pliki)
+25. https://www.zamekczyta.pl/
+26. https://pisarze.pl/
