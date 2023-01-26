@@ -36,10 +36,19 @@ def dictionary_of_article(link):
     # link = 'https://pisarze.pl/2021/06/15/rafal-skapski-profesor-aleksander-krawczuk-zaczyna-setny-rok-zycia/'
     # link = 'https://pisarze.pl/2014/06/02/jozef-jasielski-rezyser/'
     #link = 'https://pisarze.pl/2011/06/13/roman-sliwonik-wdziecznosc-co-to-takiego/'
+    #link = 'https://pisarze.pl/2022/06/14/zbyszek-ikona-kresowaty-niekonczaca-sie-bajka-o-prawdzie-marc-chagall-w-muzeum-narodowym/'
+    #link = 'https://pisarze.pl/2018/08/06/andrzej-walter-tak-jestem-2/'
+    # link = 'https://pisarze.pl/2018/06/25/andrzej-walter-powrot-szczesciarza/'
+    # link = 'https://pisarze.pl/2018/03/29/ksiazki-pod-lupa-swiatla-malego-miasta/'
+    # link = 'https://pisarze.pl/2018/03/05/andrzej-walter-dwa-narody-z-jedna-dusza/'
+    # link = 'https://pisarze.pl/2010/12/22/leszek-zulinski-pocalunki-pamieci/'
+    # link - 'https://pisarze.pl/2021/11/30/waclaw-holewinski-mebluje-glowe-ksiazkami-227/'
+    # link = 'https://pisarze.pl/2021/11/30/waclaw-holewinski-mebluje-glowe-ksiazkami-227/'
+    # link = 'https://pisarze.pl/2016/04/28/zygmunt-krzyzanowski-130-rocznica-urodzin-pisarza/' #Wiadomosci
     
     html_text = requests.get(link).text
     while 'Error 503' in html_text:
-        time.sleep(2)
+        time.sleep(3)
         html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
@@ -78,6 +87,7 @@ def dictionary_of_article(link):
     else:
         author = None
     
+    
     content_of_article = soup.find('div', class_='td-post-content')
     
     
@@ -93,15 +103,17 @@ def dictionary_of_article(link):
     
     
     #Aktualnie bierze niepotrzebne dane (do poprawy)
-    if category == 'Recenzje':
-        book_description = [x.text for x in content_of_article.find_all('p') if re.search(r'(str\.)', x.text)]
+    if 'Recenzje' in category:
+        book_description = [x.text for x in content_of_article.find_all('p') if re.search(r'(str\.)|(ISBN)|(stron )|(Stron )', x.text)]
         if book_description != '':
-            book_description = " | ".join([x.text for x in content_of_article.find_all('p') if re.search(r'(str\.)', x.text)])
+            book_description = " | ".join([x.text for x in content_of_article.find_all('p') if re.search(r'(str\.)|(ISBN)|(stron )|(Stron )', x.text)])
         else:
             book_description = None
     else:
         book_description = None
-
+        
+    
+    
 
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'pisarze', x)])
@@ -121,15 +133,28 @@ def dictionary_of_article(link):
     if category == 'Stare spotkania':
        author = None    
 
-
+    if re.search(r'Rok \d{4}', category):
+        year = re.search(r'(?<=Rok )\d{4}', category).group(0)
+    else:
+        year = None
+    
+    if re.search(r'Nr \d{1,3}', category):
+        issue = re.search(r'(?<=Nr )\d{1,3}', category).group(0)
+    else:
+        issue = None
              
+        
+        
+        
     dictionary_of_article = {'Link': link,
                              'Data publikacji': new_date,
                              'Autor': author,
                              'Kategoria': category,
+                             'Numer czasopisma': issue,
+                             'Rocznik': year,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
-                             'Opis książki': book_description,
+                             'Opis dzieła': book_description,
                              'Linki zewnętrzne': external_links,
                              'Linki do zdjęć': photos_links}
         
@@ -139,32 +164,49 @@ def dictionary_of_article(link):
     
     
 
-
-
 #%% main
 
 post_sitemap_links = get_links_from_sitemap_posts('https://pisarze.pl/sitemap_index.xml')
 
-
 all_articles_links = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_posts_links, post_sitemap_links),total=len(post_sitemap_links)))
-
-
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, all_articles_links),total=len(all_articles_links)))
 
 
-
 df = pd.DataFrame(all_results).drop_duplicates()
 df = df.sort_values('Data publikacji', ascending=False)
 
 
+with open(f"pisarze_{datetime.today().date()}.json", 'w', encoding='utf-8') as f:
+    json.dump(all_results, f)     
 
+with pd.ExcelWriter(f"pisarze_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
+    df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
+    writer.save()    
+
+
+#%%Uploading files on Google Drive
+
+gauth = GoogleAuth()           
+drive = GoogleDrive(gauth)   
+      
+upload_file_list = [f"pisarze_{datetime.today().date()}.json", f"pisarze_{datetime.today().date()}.json"]
+for upload_file in upload_file_list:
+	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+	gfile.SetContentFile(upload_file)
+	gfile.Upload()  
+
+
+
+#UWAGI:
 #Dwutygodnik. Numery są dostępne tutaj: https://pisarze.pl/poprzednie-numery/ 
-
+#Opis książki do Recenzji
+#Tytuł wiersza - tam gdzie jest kategoria Wiersz dnia / Wiersz dnia4 itp. | zazwyczaj gdy w tekscie jest 1 wiersz to jego tytuł pada po imieniu i nazwisku autora w tytule. Gdy jest wiecej wierszy to albo jest sam autor albo autor - wiersze
+#Tytuł utworu prozatorskiego
 
 
 
