@@ -45,6 +45,16 @@ def dictionary_of_article(link):
     # link - 'https://pisarze.pl/2021/11/30/waclaw-holewinski-mebluje-glowe-ksiazkami-227/'
     # link = 'https://pisarze.pl/2021/11/30/waclaw-holewinski-mebluje-glowe-ksiazkami-227/'
     # link = 'https://pisarze.pl/2016/04/28/zygmunt-krzyzanowski-130-rocznica-urodzin-pisarza/' #Wiadomosci
+    # link = 'https://pisarze.pl/2019/01/10/jaroslaw-iwaszkiewicz-%ef%bb%bf/'
+    # link = 'https://pisarze.pl/2019/01/01/stanislaw-nyczaj-pod-moja-batuta/'
+    # link = 'https://pisarze.pl/2018/12/24/stefan-jurkowski-5/'
+    # link = 'https://pisarze.pl/2018/12/13/wiersz-dnia-pod-redakcja-anny-musz-agnieszka-zajdowicz/'
+    # link = 'https://pisarze.pl/2018/11/29/wiersz-dnia-pod-redakcja-anny-musz/'
+    # link = 'https://pisarze.pl/2014/02/25/anita-spychaj/'
+    # link = 'https://pisarze.pl/2018/03/19/jacek-walczak-stare-morze-i-czlowiek/' #proza
+    # link = 'https://pisarze.pl/2016/10/24/eugeniusz-kabatc-pierwsza-wojna-narodow-mlyn-nad-narewka/'
+    # link = 'https://pisarze.pl/2016/07/18/jan-tulik-nie-nadejdzie-juz-zlo/' #recenzja
+    # link = 'https://pisarze.pl/2018/09/03/zygmunt-janikowski-zew-natury/'
     
     html_text = requests.get(link).text
     while 'Error 503' in html_text:
@@ -101,8 +111,7 @@ def dictionary_of_article(link):
         text_of_article = None
         
     
-    
-    #Aktualnie bierze niepotrzebne dane (do poprawy)
+
     if 'Recenzje' in category:
         book_description = [x.text for x in content_of_article.find_all('p') if re.search(r'(str\.)|(ISBN)|(stron )|(Stron )', x.text)]
         if book_description != '':
@@ -143,9 +152,27 @@ def dictionary_of_article(link):
     else:
         issue = None
              
-        
-        
-        
+    if 'Wiersz' in category or 'Poezja' in category: 
+        title_of_poem = re.search(r'(?<=\p{Lu}[\p{L}\.\-\s]*\p{Lu}[\p{L}\.\-\s]*\p{Lu}?[\p{L}\.\-\s]*\–|\:)(.*)', title_of_article)
+        if title_of_poem:
+            title_of_poem = re.search(r'(?<=\p{Lu}[\p{L}\.\-\s]*\p{Lu}[\p{L}\.\-\s]*\p{Lu}?[\p{L}\.\-\s]*\–|\:)(.*)', title_of_article).group(0).strip()
+        else:
+            title_of_poem = 'DO UZUPEŁNIENIA'
+    else:
+        title_of_poem = None
+            
+            
+    if 'Proza' in category: 
+        title_of_prose_text = re.search(r'(?<=\p{Lu}[\p{L}\.\-\s]*\p{Lu}[\p{L}\.\-\s]*\p{Lu}?[\p{L}\.\-\s]*\–|\:)(.*)', title_of_article)
+        if title_of_prose_text:
+            title_of_prose_text = re.search(r'(?<=\p{Lu}[\p{L}\.\-\s]*\p{Lu}[\p{L}\.\-\s]*\p{Lu}?[\p{L}\.\-\s]*\–|\:)(.*)', title_of_article).group(0).strip()
+        else:
+            title_of_prose_text = 'DO UZUPEŁNIENIA'
+    else: 
+         title_of_prose_text = None
+            
+   
+         
     dictionary_of_article = {'Link': link,
                              'Data publikacji': new_date,
                              'Autor': author,
@@ -155,6 +182,8 @@ def dictionary_of_article(link):
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Opis dzieła': book_description,
+                             'Tytuł wiersza': title_of_poem,
+                             'Tytuł utworu prozatorskiego': title_of_prose_text,
                              'Linki zewnętrzne': external_links,
                              'Linki do zdjęć': photos_links}
         
@@ -194,19 +223,13 @@ with pd.ExcelWriter(f"pisarze_{datetime.today().date()}.xlsx", engine='xlsxwrite
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"pisarze_{datetime.today().date()}.json", f"pisarze_{datetime.today().date()}.json"]
+upload_file_list = [f"pisarze_{datetime.today().date()}.json", f"pisarze_{datetime.today().date()}.xlsx"]
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
 	gfile.SetContentFile(upload_file)
 	gfile.Upload()  
 
 
-
-#UWAGI:
-#Dwutygodnik. Numery są dostępne tutaj: https://pisarze.pl/poprzednie-numery/ 
-#Opis książki do Recenzji
-#Tytuł wiersza - tam gdzie jest kategoria Wiersz dnia / Wiersz dnia4 itp. | zazwyczaj gdy w tekscie jest 1 wiersz to jego tytuł pada po imieniu i nazwisku autora w tytule. Gdy jest wiecej wierszy to albo jest sam autor albo autor - wiersze
-#Tytuł utworu prozatorskiego
 
 
 
