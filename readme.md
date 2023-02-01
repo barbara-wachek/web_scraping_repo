@@ -25,3 +25,4 @@
 24. https://krzysztofjaworski.blogspot.com/ (dwa pliki)
 25. https://www.zamekczyta.pl/
 26. https://pisarze.pl/
+27. http://chalwazwyciezonym.blogspot.com/
