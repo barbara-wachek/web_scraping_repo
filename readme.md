@@ -1,5 +1,4 @@
-## Dokumentacja:
-# https://docs.google.com/spreadsheets/d/1-g_pgkvRIhBSKBENu_5HhRCMsHatv-eux3U_ERGHZG0/edit#gid=0
+## [Dokumentacja](https://docs.google.com/spreadsheets/d/1-g_pgkvRIhBSKBENu_5HhRCMsHatv-eux3U_ERGHZG0/edit#gid=0)
 
 ## Linki do scrapowanych stron:
 1. https://krytycznymokiem.blogspot.com/    
