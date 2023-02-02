@@ -1,4 +1,5 @@
 ## [Dokumentacja](https://docs.google.com/spreadsheets/d/1-g_pgkvRIhBSKBENu_5HhRCMsHatv-eux3U_ERGHZG0/edit#gid=0)
+## [Folder z pobranymi rekordami](https://drive.google.com/drive/folders/19t1szTXTCczteiKfF2ukYsuiWpDqyo8f)
 
 ## Linki do scrapowanych stron:
 1. https://krytycznymokiem.blogspot.com/    
