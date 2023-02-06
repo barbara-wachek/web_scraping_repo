@@ -16,11 +16,6 @@ from pydrive.drive import GoogleDrive
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-# from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
-# from selenium.webdriver.common.by import By
-# from selenium.common.exceptions import TimeoutException
-
 #%% def
 
 def get_links_of_sitemap(sitemap_link):
@@ -36,10 +31,6 @@ def get_links_of_sitemap(sitemap_link):
     
 
 def dictionary_of_article(article_link):
-    # article_link = 'https://film.org.pl/kmf/jak-przez-homoseksualnosc-upada-the-last-of-us'
-    # article_link = 'https://film.org.pl/r/ostatni-wladca-wiatru-mierny-film-ktory-dobrze-sie-oglada'
-    # article_link = 'https://film.org.pl/news/quentin-tarantino-zachwyca-sie-filmem-science-fiction-z-lat-70-to-arcydzielo'
-    
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
@@ -70,7 +61,7 @@ def dictionary_of_article(article_link):
             new_date = None
         
         
-    title_of_article = soup.find('h1') #sprobowac wyjac tytuł z innego miejsca
+    title_of_article = soup.find('h1')
     if title_of_article:
         title_of_article = title_of_article.text.strip()
     else:
@@ -131,7 +122,6 @@ articles_links = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_links_of_sitemap, sitemap_links),total=len(sitemap_links)))
 
-
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
@@ -164,13 +154,6 @@ for upload_file in upload_file_list:
     
  
     
- 
-    
-#Uwagi
-#nie pobierac informacji o zdjeciach i linkach, bo praktycznie wszedzie takie informacje beda a moze byc problem z pobraniem tych ifnormacji 
-#selenium, zeby wczytac cala mapę strony (dlugo ladowala sie)
-
-
 
 
 
