@@ -124,9 +124,9 @@ with ThreadPoolExecutor() as excecutor:
 
     
 with open(f'pgajda_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f)   
+    json.dump(all_results, f, ensure_ascii=False)   
 with open(f'pgajda_extras_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results_extras, f)     
+    json.dump(all_results_extras, f, ensure_ascii=False)     
 
 
     

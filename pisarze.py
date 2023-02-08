@@ -211,7 +211,7 @@ df = df.sort_values('Data publikacji', ascending=False)
 
 
 with open(f"pisarze_{datetime.today().date()}.json", 'w', encoding='utf-8') as f:
-    json.dump(all_results, f)     
+    json.dump(all_results, f, ensure_ascii=False)     
 
 with pd.ExcelWriter(f"pisarze_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   

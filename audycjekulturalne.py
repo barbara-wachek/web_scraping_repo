@@ -89,7 +89,7 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, all_posts_links), total=len(all_posts_links)))
 
 with open(f'audycjekulturalne_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f) 
+    json.dump(all_results, f, ensure_ascii=False) 
 
 df = pd.DataFrame(all_results)
 df = df.sort_values('Data publikacji', ascending=False)

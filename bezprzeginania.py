@@ -68,7 +68,7 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
     
 with open(f'bezprzeginania_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f)        
+    json.dump(all_results, f, ensure_ascii=False)        
 
 
     

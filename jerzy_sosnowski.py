@@ -125,9 +125,9 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(extras_content, extras_links),total=len(extras_links)))
     
 with open(f'jerzy_sosnowski_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f) 
+    json.dump(all_results, f, ensure_ascii=False) 
 with open(f'jerzy_sosnowski_extras_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(extras_results, f)             
+    json.dump(extras_results, f, ensure_ascii=False)             
     
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date

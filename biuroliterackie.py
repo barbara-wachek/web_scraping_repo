@@ -488,13 +488,13 @@ df_projekty = df_projekty.sort_values('Data publikacji', ascending=False)
 #%% json i xlsx
 
 with open(f'biuroliterackie_biuletyn_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results_biuletyn, f) 
+    json.dump(all_results_biuletyn, f, ensure_ascii=False) 
 with open(f'biuroliterackie_biblioteka_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results_biblioteka, f) 
+    json.dump(all_results_biblioteka, f, ensure_ascii=False) 
 with open(f'biuroliterackie_ksiazki_katalog_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results_ksiazki_katalog, f) 
+    json.dump(all_results_ksiazki_katalog, f, ensure_ascii=False) 
 with open(f'biuroliterackie_projekty_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results_projekty, f) 
+    json.dump(all_results_projekty, f, ensure_ascii=False) 
 
 with pd.ExcelWriter(f"biuroliterackie_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df_biuletyn.to_excel(writer, 'Biuletyn', index=False) 

@@ -198,7 +198,7 @@ len(all_articles_links) == len(set(all_articles_links))
 
 #Jeden plik json wspólny dla Archiwum tekstów i Archiwum numerów:
 with open(f'czas_kultury_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f) 
+    json.dump(all_results, f, ensure_ascii=False) 
 
 
 df = pd.DataFrame(all_results).drop_duplicates()
@@ -210,11 +210,6 @@ df_archiwum_tekstow  = df_archiwum_tekstow.sort_values('Data publikacji', ascend
 
 df_archiwum_numerow = df[df['Data publikacji'].isna()]
 #df_archiwum_numerow['Numer/rok czasopisma'].unique()
-
-#df_archiwum_tekstow['Numer/rok czasopisma'].isna().value_counts()
-#Uzupełnienie raportu
-#report = ScrapingReport('https://www.pilipiuk.com', len(df), df['Data publikacji'].iloc[0])    
-#report.create_scraping_report()
 
 
 with pd.ExcelWriter(f"czas_kultury_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
@@ -239,32 +234,6 @@ for upload_file in upload_file_list:
 
 
 
-#Usunąć z linków zew. jakies dziwne linki 
-
-
-
-
-
-
-
-
-#Sprawdz, czy ktorykolwiek z elementow all_archive_links zawiera fragment tekstu, ktory nazywa sie pijesz-ty-pije-ja
-
-
-
-re.findall(r'pijesz\-ty\-pije\-ja', all_archive_links)
-
-[re.findall(r'pijesz\-ty\-pije\-ja',x) for x in all_archive_links]
-
-
-for element in all_archive_links:
-    if re.findall(r'pijesz\-ty\-pije\-ja', element):
-        print(True)
-
-[x for x in all_archive_links if 'pijesz-ty-pije-ja' in x]
-
-    
-'pijesz-ty-pije-ja'in'https://czaskultury.pl/artykul/pijesz-ty-pije-ja/' 
     
     
     

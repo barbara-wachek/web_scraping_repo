@@ -91,9 +91,9 @@ all_dictionaries_of_extras = []
 biograms = extras_content_authors('https://afront.org.pl/nasi-autorzy/')
     
 with open(f'afront_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f) 
+    json.dump(all_results, f, ensure_ascii=False) 
 with open(f'afront_extras_biograms_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(biograms, f)             
+    json.dump(biograms, f, ensure_ascii=False)             
     
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date

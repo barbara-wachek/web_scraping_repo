@@ -349,9 +349,9 @@ with ThreadPoolExecutor() as excecutor:
 
 
 with open(f'booklips_posts_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results_posts, f)        
+    json.dump(all_results_posts, f, ensure_ascii=False)        
 with open(f'booklips_pages_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results_pages, f)       
+    json.dump(all_results_pages, f, ensure_ascii=False)       
 
     
 df_posts = pd.DataFrame(all_results_posts).drop_duplicates()

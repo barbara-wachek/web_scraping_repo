@@ -106,7 +106,7 @@ series_list_of_status_code.value_counts()  # Pojawiaja się tylko kody: 200 i 40
 
     
 with open(f'pilipiuk_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f) 
+    json.dump(all_results, f, ensure_ascii=False) 
 
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date

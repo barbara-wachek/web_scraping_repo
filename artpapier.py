@@ -155,7 +155,7 @@ with ThreadPoolExecutor() as excecutor:
 
 
 with open(f'artpapier_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f) 
+    json.dump(all_results, f, ensure_ascii=False) 
 
 df = pd.DataFrame(all_results).drop_duplicates()  #Nie ma sortowania, bo brak daty publikacji. Potem mozna zrobic sortowanie po wyjeciu info z kolumny Numer/rok czasopisma
 
