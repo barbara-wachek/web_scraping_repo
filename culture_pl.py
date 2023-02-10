@@ -33,6 +33,9 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
 
+#biblioteka 
+import requests_html
+
 #%% def
 
 def get_sitemap_links(link):
@@ -57,7 +60,9 @@ def dictionary_of_article(link):
     # link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
     link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
     
-#for link in tqdm(all_articles_links):
+    
+# all_results = []    
+# for link in tqdm(all_articles_links):
     
     chrome_options = Options()
     chrome_options.headless = True
@@ -67,17 +72,57 @@ def dictionary_of_article(link):
     time.sleep(4)
     soup = BeautifulSoup(driver.page_source, 'lxml')
     
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    test_1 = str(soup)
+    
+        
+    html_text = requests.get('https://api.culture.pl/en/api/node/article').text
+    soup = BeautifulSoup(html_text, 'lxml')
+    test_1 = str(soup)
+    
+    
+    
+    
+#2023-02-10    
+    
+    from requests_html import AsyncHTMLSession
+    asession = AsyncHTMLSession()
+    
+    r = asession.get('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
+    await r.html.arender()
+    
+    
+    
+from requests_html import AsyncHTMLSession
+
+async def get_website(url: str):
+   
+    asession = AsyncHTMLSession() 
+
+    r = await asession.get(url)
+
+    await r.html.arender(sleep = 10) # sleeping is optional but do it just in case
+
+    html = r.html.raw_html # this can be returned as your result
+
+    await asession.close() # this part is important otherwise the Unwanted Kill.Chrome Error can Occur 
+
+    return html
+    
+
+
+test_2 = await get_website('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
+test_3 = str(test_2)
+
     
     
     #headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
-    browser = start_chrome(link, headless=True)
-    time.sleep(3)
+    # browser = start_chrome(link, headless=True)
+    # time.sleep(3)
 
-    soup = BeautifulSoup(browser.page_source, 'lxml')
+    # soup = BeautifulSoup(browser.page_source, 'lxml')
     
-    
-    
-
     
     date_of_publication = ''
     date_of_publication = soup.find('div', class_='published')
