@@ -236,3 +236,57 @@ with ThreadPoolExecutor() as excecutor:
 
 
 
+
+
+
+#%% Podejscie z wykorzystaniem API Culture.pl
+link = 'https://api.culture.pl/en/api/node/article'
+
+
+
+import urllib3
+http = urllib3.PoolManager()
+r = http.request('GET', 'https://api.culture.pl/en/api/node/article')
+r.status
+200
+r.data
+r.headers
+'User-agent: *\nDisallow: /deny\n'
+
+
+import json
+r = http.request('GET', 'https://api.culture.pl/en/api/node/article')
+json_file = json.loads(r.data.decode('utf-8'))
+
+next_link = json_file['links']['next']
+
+
+
+
+
+
+
+from urllib2 import Request, urlopen
+
+request = Request('https://api.culture.pl/en/api/node/article')
+
+response_body = urlopen(request).read()
+print response_body
+
+
+
+response = requests.get('https://api.culture.pl/en/api/node/article').json()
+
+
+
+#Sprobowac stworzyc 1 json ze wszystkich artykułów z response
+#otrzymać pełną zwrotkę co daje API artykułów 
+
+
+
+
+
+
+
+
+
