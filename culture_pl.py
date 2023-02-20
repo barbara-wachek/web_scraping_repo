@@ -86,34 +86,34 @@ def dictionary_of_article(link):
     
 #2023-02-10    
     
-    from requests_html import AsyncHTMLSession
-    asession = AsyncHTMLSession()
+#     from requests_html import AsyncHTMLSession
+#     asession = AsyncHTMLSession()
     
-    r = asession.get('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
-    await r.html.arender()
+#     r = asession.get('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
+#     await r.html.arender()
     
     
     
-from requests_html import AsyncHTMLSession
+# from requests_html import AsyncHTMLSession
 
-async def get_website(url: str):
+# async def get_website(url: str):
    
-    asession = AsyncHTMLSession() 
+#     asession = AsyncHTMLSession() 
 
-    r = await asession.get(url)
+#     r = await asession.get(url)
 
-    await r.html.arender(sleep = 10) # sleeping is optional but do it just in case
+#     await r.html.arender(sleep = 10) # sleeping is optional but do it just in case
 
-    html = r.html.raw_html # this can be returned as your result
+#     html = r.html.raw_html # this can be returned as your result
 
-    await asession.close() # this part is important otherwise the Unwanted Kill.Chrome Error can Occur 
+#     await asession.close() # this part is important otherwise the Unwanted Kill.Chrome Error can Occur 
 
-    return html
+#     return html
     
 
 
-test_2 = await get_website('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
-test_3 = str(test_2)
+# test_2 = await get_website('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
+# test_3 = str(test_2)
 
     
     
@@ -222,6 +222,16 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_article_links_from_sitemap_links, sitemap_links), total=len(sitemap_links)))       
 
 
+# all_polish_articles = [] 
+# for x in all_articles_links:
+#     if re.search(r'https\:\/\/culture\.pl\/pl\/', x):
+#         all_polish_articles.append(x)
+
+
+
+
+
+
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, all_articles_links), total=len(all_articles_links)))   
@@ -266,21 +276,126 @@ next_link = json_file['links']['next']
 
 
 
-from urllib2 import Request, urlopen
+# # from urllib2 import Request, urlopen
 
-request = Request('https://api.culture.pl/en/api/node/article')
+# request = Request('https://api.culture.pl/en/api/node/article')
 
-response_body = urlopen(request).read()
-print response_body
+# response_body = urlopen(request).read()
+# print response_body
 
 
-
-response = requests.get('https://api.culture.pl/en/api/node/article').json()
 
 
 
 #Sprobowac stworzyc 1 json ze wszystkich artykułów z response
 #otrzymać pełną zwrotkę co daje API artykułów 
+
+#2023-02-20
+#Po pobraniu 4803 aliasów linków zwraca błąd, bo next_link kieruje do błednej strony
+#API nie pozwala pobrać wszystkich artykułów. ZOstanie jeszcze okolo 25 tysiecy 
+
+
+
+def get_links_from_api(link):     
+    response = requests.get(link).json() 
+    licznik = 0 
+    
+    while response != None:
+        data = response['data']
+        for x in data:
+            alias_link = x['attributes']['path']['alias']
+            all_api_articles_alias.append(alias_link) 
+        licznik = licznik + 1
+        next_link = response['links']['next']['href']  
+        try:
+            response = requests.get(next_link).json()
+        except:
+            response = None
+            print('BŁĄD')
+            print(licznik)
+            print(next_link)
+
+   
+  
+all_api_articles_alias = []
+get_links_from_api('https://api.culture.pl/en/api/node/article')
+        
+
+# test_list = []
+# for x in all_api_articles_alias: 
+#     if x not in test_list:
+#         test_list.append(x)
+
+
+def create_links(link):
+    created_link = 'https://culture.pl/pl' + link
+    list_of_created_link.append(created_link)
+    
+
+list_of_created_link = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(create_links, all_api_articles_alias), total=len(all_api_articles_alias)))       
+
+
+
+#%% Proba stworzenia jsona z danymi z artykulow: 
+  
+
+def dictionary_of_article(link):     
+    response = requests.get(link).json() 
+
+    while response != None:
+        dictionary_of_article = dict()
+        data = response['data']
+        for x in data:
+            link = 'https://culture.pl/pl' + str(x['attributes']['path']['alias'])
+            date_of_publication = x['attributes']['created']
+            #lead = x['attributes']['field_summary']['value']
+            title = x['attributes']['title']
+            
+            dictionary_of_article = {'Link' : link,
+                                     'Data publikacji': date_of_publication,
+                                     'Tytuł': title}
+                                    
+            all_results.append(dictionary_of_article)
+            
+        next_link = response['links']['next']['href']  
+        try:
+            response = requests.get(next_link).json()
+        except:
+            response = None
+            print('BŁĄD')
+            print(next_link)
+
+   
+
+all_results = []
+dictionary_of_article('https://api.culture.pl/en/api/node/article')
+
+df = pd.DataFrame(all_results)
+
+# with ThreadPoolExecutor() as excecutor:
+#     list(tqdm(excecutor.map(dictionary_of_article, all_api_articles_alias), total=len(all_api_articles_alias)))       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
