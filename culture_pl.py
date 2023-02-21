@@ -380,7 +380,10 @@ df = pd.DataFrame(all_results)
 
 
 
-
+#2023-02-21 
+# Na 3.03 demo bazhum 
+# + kod z culture.pl 
+#wziąć 100 losowych artykułów przy uzyciu biblioteki random i sprawdz ile czasu zajmuje 100 stron i oszacowac ile czasu zajmie calosc 
 
 
 
