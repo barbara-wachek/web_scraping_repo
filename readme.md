@@ -31,3 +31,5 @@
 27. http://chalwazwyciezonym.blogspot.com/
 28. https://kochampolskiekino.pl/
 29. https://film.org.pl/
+30. http://cultureave.com/
+31. https://bylamwidzialam.pl/

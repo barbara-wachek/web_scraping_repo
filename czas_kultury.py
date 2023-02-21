@@ -46,17 +46,10 @@ def czas_kultury_get_links_from_article_archive(link):
     all_articles = [x.a['href'] for x in soup.find_all('div', class_="post-box-component")]
     all_articles_from_archive.extend(all_articles)
     return all_articles_from_archive
+
 #%% For loop
 #def dictionary_of_article(link):
-    #link = 'https://czaskultury.pl/artykul/pijesz-ty-pije-ja/' #archiwum numerów
-    #link = 'https://czaskultury.pl/felietony/sacrum-w-niewoli/' #archiwum tekstów
-    #link = 'https://czaskultury.pl/artykul/szalenstwo-pszczol/' #archiwum numeró♥w
-    #link = 'https://czaskultury.pl/czytanki/dystopia-z-osmiornica-w-tle/'
-    #link = 'https://czaskultury.pl/czytanki/kara-walker-i-prawo-do-mowienia/'
-    #link = 'https://czaskultury.pl/czytanki/przez-ucho-do-plocka/'
-    #link = 'https://czaskultury.pl/czytanki/przestrzen-teatralna-w-pradze/'
-    
-    
+        
 # html_collect = []
 # for link in tqdm(all_articles_links):
 #     #all_articles_links[100] = link
@@ -74,7 +67,6 @@ def czas_kultury_get_links_from_article_archive(link):
     #    r = "No response"
 all_results = []   
 for link in tqdm(all_articles_links):  
-    #link = 'https://czaskultury.pl/artykul/berlinale2021-zwrot-w-strone-kina-niezaleznego/'
     html_text = requests.get(link).text
     while 'Error 503' in html_text:
         time.sleep(5)
@@ -124,7 +116,7 @@ for link in tqdm(all_articles_links):
         additional_info = None
     
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'(czaskultury)|(mailto)|(/)', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'(czaskultury)|(mailto)|(/)|(#_)', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
 
@@ -158,6 +150,7 @@ for link in tqdm(all_articles_links):
 #Linki z Archiwum tekstów:
 number_of_pages_in_archive_of_texts =  number_of_pages_in_archive_of_texts('https://czaskultury.pl/archiwum-tekstow/page/6/')
 
+
 links_of_archive_pages = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(czas_kultury_get_links_from_archive, range(1, int(number_of_pages_in_archive_of_texts)+1)), total=len(range(1, int(number_of_pages_in_archive_of_texts)+1))))
@@ -178,7 +171,7 @@ with ThreadPoolExecutor() as excecutor:
 #Wyrzucenie ewentualnych duplikatów z listy linków z archiwum artykułów:
 all_articles_from_archive = list(set(all_articles_from_archive))
 
-#Wyrzucenie ewentualnych duplikatów z listy linków z archiwum artykułów:
+#Wyrzucenie ewentualnych duplikatów z listy linków z archiwum tekstów:
 all_archive_texts_links = list(set(all_archive_texts_links))   
 
 
