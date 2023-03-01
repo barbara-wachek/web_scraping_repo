@@ -11,7 +11,7 @@ import json
 #from pydrive.auth import GoogleAuth
 #from pydrive.drive import GoogleDrive
 import time
-
+import random
 
 from selenium import webdriver
 # from selenium.webdriver.common.keys import Keys
@@ -64,22 +64,22 @@ def dictionary_of_article(link):
 # all_results = []    
 # for link in tqdm(all_articles_links):
     
-    chrome_options = Options()
-    chrome_options.headless = True
+    # chrome_options = Options()
+    # chrome_options.headless = True
     
-    driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
-    driver.get(link)
-    time.sleep(4)
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    # driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
+    # driver.get(link)
+    # time.sleep(4)
+    # soup = BeautifulSoup(driver.page_source, 'lxml')
     
-    html_text = requests.get(link).text
-    soup = BeautifulSoup(html_text, 'lxml')
-    test_1 = str(soup)
+    # html_text = requests.get(link).text
+    # soup = BeautifulSoup(html_text, 'lxml')
+    # test_1 = str(soup)
     
         
-    html_text = requests.get('https://api.culture.pl/en/api/node/article').text
-    soup = BeautifulSoup(html_text, 'lxml')
-    test_1 = str(soup)
+    # html_text = requests.get('https://api.culture.pl/en/api/node/article').text
+    # soup = BeautifulSoup(html_text, 'lxml')
+    # test_1 = str(soup)
     
     
     
@@ -116,15 +116,28 @@ def dictionary_of_article(link):
 # test_3 = str(test_2)
 
     
-    
+     # soup = BeautifulSoup(browser.page_source, 'lxml')   
     #headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
     # browser = start_chrome(link, headless=True)
     # time.sleep(3)
 
-    # soup = BeautifulSoup(browser.page_source, 'lxml')
+all_results = []
+for link in tqdm(random.choices(all_articles_links, k=100)):
+    #link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe' 
+    
+    chrome_options = Options()
+    chrome_options.headless = True
+    
+    driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
+    driver.get(link)
+    time.sleep(6)
+    soup = BeautifulSoup(driver.page_source, 'lxml')
+    
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'lxml')
     
     
-    date_of_publication = ''
+    # date_of_publication = ''
     date_of_publication = soup.find('div', class_='published')
     if date_of_publication: 
         date_of_publication = date_of_publication.text 
@@ -187,9 +200,9 @@ def dictionary_of_article(link):
         external_links = None
         
 
-    photos_links_with_description = [{x['data-src']:x['title'].replace('\xa0', '').replace('\u200b', '')} for x in content_of_article.find_all('img')]
-    if photos_links_with_description == []:
-         photos_links_with_description = None
+    # photos_links_with_description = [{x['data-src']:x['title'].replace('\xa0', '').replace('\u200b', '')} for x in content_of_article.find_all('img')]
+    # if photos_links_with_description == []:
+    #      photos_links_with_description = None
 
        
         
@@ -204,7 +217,6 @@ def dictionary_of_article(link):
                              'Linki zewnętrzne': external_links,
                              'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img')] else False,
                              'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
-                             'Linki do zdjęć z podpisami': photos_links_with_description
                              }
 
     all_results.append(dictionary_of_article)
