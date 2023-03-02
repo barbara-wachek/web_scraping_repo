@@ -45,7 +45,6 @@ def get_sitemap_links(link):
     
     return sitemap_links
 
-
 def get_article_links_from_sitemap_links(link):
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
@@ -54,16 +53,8 @@ def get_article_links_from_sitemap_links(link):
     return all_articles_links
 
 
-def dictionary_of_article(link): 
-    
-    # link = 'https://culture.pl/pl/artykul/10-architektonicznych-atrakcji-kielecczyzny'
-    # link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
-    link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe'
-    
-    
-# all_results = []    
-# for link in tqdm(all_articles_links):
-    
+# def dictionary_of_article(link): 
+       
     # chrome_options = Options()
     # chrome_options.headless = True
     
@@ -121,28 +112,31 @@ def dictionary_of_article(link):
     # browser = start_chrome(link, headless=True)
     # time.sleep(3)
 
+random_links_from_only_articles = random.choices(only_articles, k=100)
+
+#Zawartosc 50 linków pobiera w czasie około 8 minut. 100 w 16 minut. 8 tysiecy rekordów w 21 godzin... 
+
 all_results = []
-for link in tqdm(random.choices(all_articles_links, k=100)):
-    #link = 'https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe' 
+for link in tqdm(random_links_from_only_articles):
+    #link = 'https://culture.pl/pl/artykul/scorsese-promuje-polskie-kino' 
+    #link = 'https://culture.pl/pl/artykul/muzeum-pomorza-srodkowego-w-slupsku'
     
     chrome_options = Options()
     chrome_options.headless = True
     
     driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
+    driver.implicitly_wait(5)
     driver.get(link)
-    time.sleep(6)
+    
+    time.sleep(5)
     soup = BeautifulSoup(driver.page_source, 'lxml')
-    
-    html_text = requests.get(link).text
-    soup = BeautifulSoup(html_text, 'lxml')
-    
-    
-    # date_of_publication = ''
+
+
     date_of_publication = soup.find('div', class_='published')
     if date_of_publication: 
         date_of_publication = date_of_publication.text 
         date = re.sub(r'(Opublikowany\:\s)(\d{1,2}\s)(\p{L}*)(\s)(\d{4})', r'\2\3\4\5', date_of_publication).strip()
-        lookup_table = {"sty": "01", "lut": "02", "mar": "03", "kwi": "04", "maj": "05", "czer": "06", "lip": "07", "sier": "08", "wrz": "09", "paź": "10", "lis": "11", "gru": "12"}
+        lookup_table = {"sty": "01", "lut": "02", "mar": "03", "kwi": "04", "maj": "05", "cze": "06", "lip": "07", "sie": "08", "wrz": "09", "paź": "10", "lis": "11", "gru": "12"}
         for k, v in lookup_table.items(): 
             date = date.replace(k, v)
             
@@ -178,11 +172,13 @@ for link in tqdm(random.choices(all_articles_links, k=100)):
     else:
         about_author = None
         
-    
         
-    text_of_article = [x.p.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]
+    text_of_article = [x for x in content_of_article.find_all('div', class_='content')]
     if text_of_article:
-        text_of_article = " | ".join(text_of_article).strip()
+        try:
+            text_of_article = " | ".join([x.p.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]).strip()
+        except AttributeError:
+            text_of_article = 'ERROR!'
     else:
         text_of_article = None
 
@@ -193,20 +189,18 @@ for link in tqdm(random.choices(all_articles_links, k=100)):
         tags = None
     
     
-    external_links = [x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'(culture)|(^\/pl\/.*)|(^\/\s?$)', x)]
-    if external_links != []:
-        external_links = ' | '.join(external_links)
-    else:
-        external_links = None
+    # external_links = [x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'(culture)|(^\/pl\/.*)|(^\/\s?$)', x)]
+    # if external_links != []:
+    #     external_links = ' | '.join(external_links)
+    # else:
+    #     external_links = None
         
 
     # photos_links_with_description = [{x['data-src']:x['title'].replace('\xa0', '').replace('\u200b', '')} for x in content_of_article.find_all('img')]
     # if photos_links_with_description == []:
-    #      photos_links_with_description = None
+    #       photos_links_with_description = None
+  
 
-       
-        
-    
     dictionary_of_article = {'Link': link, 
                              'Data publikacji': new_date, 
                              'Autor': author,
@@ -214,9 +208,9 @@ for link in tqdm(random.choices(all_articles_links, k=100)):
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
-                             'Linki zewnętrzne': external_links,
-                             'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img')] else False,
-                             'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
+                             # 'Linki zewnętrzne': external_links,
+                             #'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img')] else False,
+                             #'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
                              }
 
     all_results.append(dictionary_of_article)
@@ -234,13 +228,12 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_article_links_from_sitemap_links, sitemap_links), total=len(sitemap_links)))       
 
 
-# all_polish_articles = [] 
-# for x in all_articles_links:
-#     if re.search(r'https\:\/\/culture\.pl\/pl\/', x):
-#         all_polish_articles.append(x)
 
-
-
+#Do wybrania ze zbioru artykułow tylko tych ktore maja oznaczenie kategorii jako artykul (inne kategorie to np. wydarzenia, tworca, dzielo, galeria, miejsce - tu mogą byc instytucje, node, wideo, wydarzenie). Po wstępnym rozeznaniu kategoria dzieło tez jest do pobrania - są tam recenzje i notki o utworach
+only_articles = []
+for x in all_articles_links:
+    if re.match(r'https\:\/\/culture\.pl\/pl\/artykul\/.*', x):
+        only_articles.append(x)
 
 
 
@@ -249,13 +242,12 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, all_articles_links), total=len(all_articles_links)))   
 
 
+df = pd.DataFrame(all_results)
 
 
 
-
-
-
-
+#Problemy z pobieraniem tekstów artykułów - moze w ogole z tego zrezygnowac? Moze wtedy szybciej pójdzie? 
+# Autor często jest zapisany jako Culture.pl, a niżej u dołu artykułu jest podany właciwy autor
 
 
 
