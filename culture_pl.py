@@ -11,30 +11,20 @@ import json
 #from pydrive.auth import GoogleAuth
 #from pydrive.drive import GoogleDrive
 import time
-import random
+#import random
+from time import mktime
 
 from selenium import webdriver
-# from selenium.webdriver.common.keys import Keys
-# from selenium.webdriver.common.by import By
-
-
-# from requests_html import HTMLSession
-
-
-from helium import *
-from time import mktime
 from selenium.webdriver.chrome.options import Options
 
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.webdriver.common.by import By
+# from selenium.common.exceptions import TimeoutException
 
 
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
-
-
-#biblioteka 
-import requests_html
+# #biblioteka 
+# import requests_html
 
 #%% def
 
@@ -55,71 +45,15 @@ def get_article_links_from_sitemap_links(link):
 
 # def dictionary_of_article(link): 
        
-    # chrome_options = Options()
-    # chrome_options.headless = True
-    
-    # driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
-    # driver.get(link)
-    # time.sleep(4)
-    # soup = BeautifulSoup(driver.page_source, 'lxml')
-    
-    # html_text = requests.get(link).text
-    # soup = BeautifulSoup(html_text, 'lxml')
-    # test_1 = str(soup)
-    
-        
-    # html_text = requests.get('https://api.culture.pl/en/api/node/article').text
-    # soup = BeautifulSoup(html_text, 'lxml')
-    # test_1 = str(soup)
-    
-    
-    
-    
-#2023-02-10    
-    
-#     from requests_html import AsyncHTMLSession
-#     asession = AsyncHTMLSession()
-    
-#     r = asession.get('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
-#     await r.html.arender()
-    
-    
-    
-# from requests_html import AsyncHTMLSession
-
-# async def get_website(url: str):
-   
-#     asession = AsyncHTMLSession() 
-
-#     r = await asession.get(url)
-
-#     await r.html.arender(sleep = 10) # sleeping is optional but do it just in case
-
-#     html = r.html.raw_html # this can be returned as your result
-
-#     await asession.close() # this part is important otherwise the Unwanted Kill.Chrome Error can Occur 
-
-#     return html
-    
-
-
-# test_2 = await get_website('https://culture.pl/pl/artykul/niesiemy-dla-was-bombe-polskie-manifesty-filmowe')
-# test_3 = str(test_2)
-
-    
-     # soup = BeautifulSoup(browser.page_source, 'lxml')   
-    #headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
-    # browser = start_chrome(link, headless=True)
-    # time.sleep(3)
-
-random_links_from_only_articles = random.choices(only_articles, k=100)
-
+#random_links_from_only_articles = random.choices(only_articles, k=100)
 #Zawartosc 50 linków pobiera w czasie około 8 minut. 100 w 16 minut. 8 tysiecy rekordów w 21 godzin... 12 tysięcy w około 32 godziny
 
+
+
 all_results = []
-for link in tqdm(random_links_from_only_articles):
-    #link = 'https://culture.pl/pl/artykul/scorsese-promuje-polskie-kino' 
-    #link = 'https://culture.pl/pl/artykul/muzeum-pomorza-srodkowego-w-slupsku'
+
+
+for link in tqdm(first_artykul_category_list):
     
     chrome_options = Options()
     chrome_options.headless = True
@@ -188,17 +122,7 @@ for link in tqdm(random_links_from_only_articles):
     else:
         tags = None
     
-    
-    # external_links = [x for x in [x['href'] for x in content_of_article.find_all('a')] if not re.findall(r'(culture)|(^\/pl\/.*)|(^\/\s?$)', x)]
-    # if external_links != []:
-    #     external_links = ' | '.join(external_links)
-    # else:
-    #     external_links = None
-        
 
-    # photos_links_with_description = [{x['data-src']:x['title'].replace('\xa0', '').replace('\u200b', '')} for x in content_of_article.find_all('img')]
-    # if photos_links_with_description == []:
-    #       photos_links_with_description = None
   
 
     dictionary_of_article = {'Link': link, 
@@ -207,10 +131,7 @@ for link in tqdm(random_links_from_only_articles):
                              'Kategoria': category,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
-                             'Tagi': tags,
-                             # 'Linki zewnętrzne': external_links,
-                             #'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img')] else False,
-                             #'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
+                             'Tagi': tags
                              }
 
     all_results.append(dictionary_of_article)
@@ -228,173 +149,194 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_article_links_from_sitemap_links, sitemap_links), total=len(sitemap_links)))       
 
 
-
 #Do wybrania ze zbioru artykułow tylko tych ktore maja oznaczenie kategorii jako artykul (inne kategorie to np. wydarzenia, tworca, dzielo, galeria, miejsce - tu mogą byc instytucje, node, wideo, wydarzenie). Po wstępnym rozeznaniu kategoria dzieło tez jest do pobrania - są tam recenzje i notki o utworach
 
-only_articles = []
+
+artykul_category = []
 for x in all_articles_links:
     if re.match(r'https\:\/\/culture\.pl\/pl\/artykul\/.*', x):
-        only_articles.append(x)
+        artykul_category.append(x)
 
+
+first_artykul_category_list = artykul_category[0:500]
+second_artykul_category_list = artykul_category[501:1001]
+third_artykul_category_list = artykul_category[1001:1501]
+forth_artykul_category_list = artykul_category[1501:2001]
+fifth_artykul_category_list = artykul_category[2001:2501]
+sixth_artykul_category_list = artykul_category[2501:3001]
+seventh_artykul_category_list = artykul_category[3001:3501]
+eighth_artykul_category_list = artykul_category[3501:4001]
+ninth_artykul_category_list = artykul_category[4001:4501]
+tenth_artykul_category_list = artykul_category[4501:5001]
+
+with open(f'culture_pl_artykuly_000-1000{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results, f, ensure_ascii=False)   
+     
+
+# df = pd.DataFrame(all_results).drop_duplicates()
+# df = df.sort_values('Data publikacji', ascending=False)
+
+
+
+
+
+
+#%% Pozostale listy z linkami: 
 dzielo_category = []
 for x in all_articles_links:
     if re.match(r'https\:\/\/culture\.pl\/pl\/dzielo\/.*', x):
         dzielo_category.append(x)
 
+wydarzenie_category = []
+for x in all_articles_links:
+    if re.match(r'https\:\/\/culture\.pl\/pl\/dzielo\/.*', x):
+        wydarzenie_category.append(x)
 
 
-
-all_results = []
-with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(dictionary_of_article, all_articles_links), total=len(all_articles_links)))   
 
 
 df = pd.DataFrame(all_results)
 
 
 
-#Problemy z pobieraniem tekstów artykułów - moze w ogole z tego zrezygnowac? Moze wtedy szybciej pójdzie? 
 # Autor często jest zapisany jako Culture.pl, a niżej u dołu artykułu jest podany właciwy autor
 
 
 
 
 
+
+
+
+
+
+
+
+
 #%% Podejscie z wykorzystaniem API Culture.pl
-link = 'https://api.culture.pl/en/api/node/article'
+# link = 'https://api.culture.pl/en/api/node/article'
 
 
-
-import urllib3
-http = urllib3.PoolManager()
-r = http.request('GET', 'https://api.culture.pl/en/api/node/article')
-r.status
-200
-r.data
-r.headers
-'User-agent: *\nDisallow: /deny\n'
-
-
-import json
-r = http.request('GET', 'https://api.culture.pl/en/api/node/article')
-json_file = json.loads(r.data.decode('utf-8'))
-
-next_link = json_file['links']['next']
+# import urllib3
+# http = urllib3.PoolManager()
+# r = http.request('GET', 'https://api.culture.pl/en/api/node/article')
+# r.status
+# 200
+# r.data
+# r.headers
+# 'User-agent: *\nDisallow: /deny\n'
 
 
+# import json
+# r = http.request('GET', 'https://api.culture.pl/en/api/node/article')
+# json_file = json.loads(r.data.decode('utf-8'))
 
-
-
-
-
-# # from urllib2 import Request, urlopen
-
-# request = Request('https://api.culture.pl/en/api/node/article')
-
-# response_body = urlopen(request).read()
-# print response_body
+# next_link = json_file['links']['next']
 
 
 
 
 
-#Sprobowac stworzyc 1 json ze wszystkich artykułów z response
-#otrzymać pełną zwrotkę co daje API artykułów 
+# # # from urllib2 import Request, urlopen
 
-#2023-02-20
-#Po pobraniu 4803 aliasów linków zwraca błąd, bo next_link kieruje do błednej strony
-#API nie pozwala pobrać wszystkich artykułów. ZOstanie jeszcze okolo 25 tysiecy 
+# # request = Request('https://api.culture.pl/en/api/node/article')
+
+# # response_body = urlopen(request).read()
+# # print response_body
 
 
 
-def get_links_from_api(link):     
-    response = requests.get(link).json() 
-    licznik = 0 
+
+
+# #Sprobowac stworzyc 1 json ze wszystkich artykułów z response
+# #otrzymać pełną zwrotkę co daje API artykułów 
+
+# #2023-02-20
+# #Po pobraniu 4803 aliasów linków zwraca błąd, bo next_link kieruje do błednej strony
+# #API nie pozwala pobrać wszystkich artykułów. ZOstanie jeszcze okolo 25 tysiecy 
+
+
+
+# def get_links_from_api(link):     
+#     response = requests.get(link).json() 
+#     licznik = 0 
     
-    while response != None:
-        data = response['data']
-        for x in data:
-            alias_link = x['attributes']['path']['alias']
-            all_api_articles_alias.append(alias_link) 
-        licznik = licznik + 1
-        next_link = response['links']['next']['href']  
-        try:
-            response = requests.get(next_link).json()
-        except:
-            response = None
-            print('BŁĄD')
-            print(licznik)
-            print(next_link)
+#     while response != None:
+#         data = response['data']
+#         for x in data:
+#             alias_link = x['attributes']['path']['alias']
+#             all_api_articles_alias.append(alias_link) 
+#         licznik = licznik + 1
+#         next_link = response['links']['next']['href']  
+#         try:
+#             response = requests.get(next_link).json()
+#         except:
+#             response = None
+#             print('BŁĄD')
+#             print(licznik)
+#             print(next_link)
 
    
   
-all_api_articles_alias = []
-get_links_from_api('https://api.culture.pl/en/api/node/article')
+# all_api_articles_alias = []
+# get_links_from_api('https://api.culture.pl/en/api/node/article')
         
 
-# test_list = []
-# for x in all_api_articles_alias: 
-#     if x not in test_list:
-#         test_list.append(x)
+# # test_list = []
+# # for x in all_api_articles_alias: 
+# #     if x not in test_list:
+# #         test_list.append(x)
 
 
-def create_links(link):
-    created_link = 'https://culture.pl/pl' + link
-    list_of_created_link.append(created_link)
+# def create_links(link):
+#     created_link = 'https://culture.pl/pl' + link
+#     list_of_created_link.append(created_link)
     
 
-list_of_created_link = []
-with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(create_links, all_api_articles_alias), total=len(all_api_articles_alias)))       
+# list_of_created_link = []
+# with ThreadPoolExecutor() as excecutor:
+#     list(tqdm(excecutor.map(create_links, all_api_articles_alias), total=len(all_api_articles_alias))
 
-
-
-#%% Proba stworzenia jsona z danymi z artykulow: 
+# #%% Proba stworzenia jsona z danymi z artykulow: 
   
 
-def dictionary_of_article(link):     
-    response = requests.get(link).json() 
+# def dictionary_of_article(link):     
+#     response = requests.get(link).json() 
 
-    while response != None:
-        dictionary_of_article = dict()
-        data = response['data']
-        for x in data:
-            link = 'https://culture.pl/pl' + str(x['attributes']['path']['alias'])
-            date_of_publication = x['attributes']['created']
-            #lead = x['attributes']['field_summary']['value']
-            title = x['attributes']['title']
+#     while response != None:
+#         dictionary_of_article = dict()
+#         data = response['data']
+#         for x in data:
+#             link = 'https://culture.pl/pl' + str(x['attributes']['path']['alias'])
+#             date_of_publication = x['attributes']['created']
+#             #lead = x['attributes']['field_summary']['value']
+#             title = x['attributes']['title']
             
-            dictionary_of_article = {'Link' : link,
-                                     'Data publikacji': date_of_publication,
-                                     'Tytuł': title}
+#             dictionary_of_article = {'Link' : link,
+#                                      'Data publikacji': date_of_publication,
+#                                      'Tytuł': title}
                                     
-            all_results.append(dictionary_of_article)
+#             all_results.append(dictionary_of_article)
             
-        next_link = response['links']['next']['href']  
-        try:
-            response = requests.get(next_link).json()
-        except:
-            response = None
-            print('BŁĄD')
-            print(next_link)
+#         next_link = response['links']['next']['href']  
+#         try:
+#             response = requests.get(next_link).json()
+#         except:
+#             response = None
+#             print('BŁĄD')
+#             print(next_link)
 
    
 
-all_results = []
-dictionary_of_article('https://api.culture.pl/en/api/node/article')
+# all_results = []
+# dictionary_of_article('https://api.culture.pl/en/api/node/article')
 
-df = pd.DataFrame(all_results)
+# df = pd.DataFrame(all_results)
 
-# with ThreadPoolExecutor() as excecutor:
-#     list(tqdm(excecutor.map(dictionary_of_article, all_api_articles_alias), total=len(all_api_articles_alias)))       
-
-
+# # with ThreadPoolExecutor() as excecutor:
+# #     list(tqdm(excecutor.map(dictionary_of_article, all_api_articles_alias), total=len(all_api_articles_alias)))       
 
 
-#2023-02-21 
-# Na 3.03 demo bazhum 
-# + kod z culture.pl 
-#wziąć 100 losowych artykułów przy uzyciu biblioteki random i sprawdz ile czasu zajmuje 100 stron i oszacowac ile czasu zajmie calosc 
 
 
 
