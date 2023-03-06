@@ -114,7 +114,7 @@ def get_article_links_from_sitemap_links(link):
 
 random_links_from_only_articles = random.choices(only_articles, k=100)
 
-#Zawartosc 50 linków pobiera w czasie około 8 minut. 100 w 16 minut. 8 tysiecy rekordów w 21 godzin... 
+#Zawartosc 50 linków pobiera w czasie około 8 minut. 100 w 16 minut. 8 tysiecy rekordów w 21 godzin... 12 tysięcy w około 32 godziny
 
 all_results = []
 for link in tqdm(random_links_from_only_articles):
@@ -230,10 +230,17 @@ with ThreadPoolExecutor() as excecutor:
 
 
 #Do wybrania ze zbioru artykułow tylko tych ktore maja oznaczenie kategorii jako artykul (inne kategorie to np. wydarzenia, tworca, dzielo, galeria, miejsce - tu mogą byc instytucje, node, wideo, wydarzenie). Po wstępnym rozeznaniu kategoria dzieło tez jest do pobrania - są tam recenzje i notki o utworach
+
 only_articles = []
 for x in all_articles_links:
     if re.match(r'https\:\/\/culture\.pl\/pl\/artykul\/.*', x):
         only_articles.append(x)
+
+dzielo_category = []
+for x in all_articles_links:
+    if re.match(r'https\:\/\/culture\.pl\/pl\/dzielo\/.*', x):
+        dzielo_category.append(x)
+
 
 
 
