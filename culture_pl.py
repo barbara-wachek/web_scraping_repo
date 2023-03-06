@@ -47,7 +47,8 @@ def get_article_links_from_sitemap_links(link):
        
 #random_links_from_only_articles = random.choices(only_articles, k=100)
 #Zawartosc 50 linków pobiera w czasie około 8 minut. 100 w 16 minut. 8 tysiecy rekordów w 21 godzin... 12 tysięcy w około 32 godziny
-
+driver_laptop = "C:\\Users\\Barbara Wachek\\Desktop\\SeleniumDrivers"
+driver_desktop = "C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe"
 
 
 all_results = []
