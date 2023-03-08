@@ -47,14 +47,14 @@ def get_article_links_from_sitemap_links(link):
        
 #random_links_from_only_articles = random.choices(only_articles, k=100)
 #Zawartosc 50 linków pobiera w czasie około 8 minut. 100 w 16 minut. 8 tysiecy rekordów w 21 godzin... 12 tysięcy w około 32 godziny
+
 driver_laptop = "C:\\Users\\Barbara Wachek\\Desktop\\SeleniumDrivers"
 driver_desktop = "C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe"
 
 
 all_results = []
 
-
-for link in tqdm(first_artykul_category_list):
+for link in tqdm(forth_artykul_category_list):
     
     chrome_options = Options()
     chrome_options.headless = True
@@ -159,10 +159,12 @@ for x in all_articles_links:
         artykul_category.append(x)
 
 
-first_artykul_category_list = artykul_category[0:500]
-second_artykul_category_list = artykul_category[501:1001]
-third_artykul_category_list = artykul_category[1001:1501]
-forth_artykul_category_list = artykul_category[1501:2001]
+#first_artykul_category_list = artykul_category[0:500]
+#second_artykul_category_list = artykul_category[501:1001]
+#third_artykul_category_list = artykul_category[1001:1501]
+#forth_artykul_category_list = artykul_category[1501:2001]
+
+
 fifth_artykul_category_list = artykul_category[2001:2501]
 sixth_artykul_category_list = artykul_category[2501:3001]
 seventh_artykul_category_list = artykul_category[3001:3501]
@@ -170,12 +172,14 @@ eighth_artykul_category_list = artykul_category[3501:4001]
 ninth_artykul_category_list = artykul_category[4001:4501]
 tenth_artykul_category_list = artykul_category[4501:5001]
 
-with open(f'culture_pl_artykuly_000-1000{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)   
-     
 
-# df = pd.DataFrame(all_results).drop_duplicates()
-# df = df.sort_values('Data publikacji', ascending=False)
+
+with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_1501-2000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results, f, ensure_ascii=False)   
+  
+
+df = pd.DataFrame(all_results).drop_duplicates()
+df = df.sort_values('Data publikacji', ascending=False)
 
 
 
