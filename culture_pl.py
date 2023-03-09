@@ -54,8 +54,9 @@ driver_desktop = "C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe"
 
 all_results = []
 
-for link in tqdm(forth_artykul_category_list):
-    
+for link in tqdm(sixth_artykul_category_list):
+    #link = 'https://culture.pl/pl/artykul/filmowy-maj-polacy-na-festiwalach'
+    #link = 'https://culture.pl/pl/artykul/nowy-serwis-polskiego-radia-poswiecony-herbertowi'
     chrome_options = Options()
     chrome_options.headless = True
     
@@ -111,11 +112,14 @@ for link in tqdm(forth_artykul_category_list):
     text_of_article = [x for x in content_of_article.find_all('div', class_='content')]
     if text_of_article:
         try:
-            text_of_article = " | ".join([x.p.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]).strip()
+            text_of_article = " | ".join([x.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]).strip()
         except AttributeError:
             text_of_article = 'ERROR!'
     else:
         text_of_article = None
+
+    if text_of_article: 
+        text_of_article = re.sub(r'(.*Twitter)(.*)', r'\2', text_of_article)
 
     tags = soup.find('div', class_='topic')
     if tags: 
@@ -163,19 +167,23 @@ for x in all_articles_links:
 #second_artykul_category_list = artykul_category[501:1001]
 #third_artykul_category_list = artykul_category[1001:1501]
 #forth_artykul_category_list = artykul_category[1501:2001]
+#fifth_artykul_category_list = artykul_category[2001:2501]
+
+#DO fifth źle pobiera tekst artykułu 
+
+#sixth_artykul_category_list = artykul_category[2501:3001]
+#seventh_artykul_category_list = artykul_category[3001:3501]
 
 
-fifth_artykul_category_list = artykul_category[2001:2501]
-sixth_artykul_category_list = artykul_category[2501:3001]
-seventh_artykul_category_list = artykul_category[3001:3501]
+
 eighth_artykul_category_list = artykul_category[3501:4001]
 ninth_artykul_category_list = artykul_category[4001:4501]
 tenth_artykul_category_list = artykul_category[4501:5001]
 
 
-
-with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_1501-2000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)   
+# PAMIETAJ O ZMIANIE NAZWY!!
+# with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_2501-3000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+#     json.dump(all_results, f, ensure_ascii=False)   
   
 
 df = pd.DataFrame(all_results).drop_duplicates()
