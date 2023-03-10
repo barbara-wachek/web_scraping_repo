@@ -54,9 +54,7 @@ driver_desktop = "C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe"
 
 all_results = []
 
-for link in tqdm(sixth_artykul_category_list):
-    #link = 'https://culture.pl/pl/artykul/filmowy-maj-polacy-na-festiwalach'
-    #link = 'https://culture.pl/pl/artykul/nowy-serwis-polskiego-radia-poswiecony-herbertowi'
+for link in tqdm(ninth_artykul_category_list):
     chrome_options = Options()
     chrome_options.headless = True
     
@@ -156,6 +154,7 @@ with ThreadPoolExecutor() as excecutor:
 
 #Do wybrania ze zbioru artykułow tylko tych ktore maja oznaczenie kategorii jako artykul (inne kategorie to np. wydarzenia, tworca, dzielo, galeria, miejsce - tu mogą byc instytucje, node, wideo, wydarzenie). Po wstępnym rozeznaniu kategoria dzieło tez jest do pobrania - są tam recenzje i notki o utworach
 
+#8362 artykułów w dnu 10.03.2023
 
 artykul_category = []
 for x in all_articles_links:
@@ -176,13 +175,17 @@ for x in all_articles_links:
 
 
 
-eighth_artykul_category_list = artykul_category[3501:4001]
-ninth_artykul_category_list = artykul_category[4001:4501]
+#eighth_artykul_category_list = artykul_category[3501:4001]
+#ninth_artykul_category_list = artykul_category[4001:4501]
+
+
 tenth_artykul_category_list = artykul_category[4501:5001]
 
 
 # PAMIETAJ O ZMIANIE NAZWY!!
-# with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_2501-3000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+#f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_2501-3000_{datetime.today().date()}.json'
+
+# with open(f'C:\\Users\\Barbara Wachek\\Documents\\Python Scripts\\Culture.pl\\culture_pl_artykuly_4001-4500_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
 #     json.dump(all_results, f, ensure_ascii=False)   
   
 
