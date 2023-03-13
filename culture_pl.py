@@ -54,7 +54,7 @@ driver_desktop = "C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe"
 
 all_results = []
 
-for link in tqdm(ninth_artykul_category_list):
+for link in tqdm(fourteenth_artykul_category_list):
     chrome_options = Options()
     chrome_options.headless = True
     
@@ -154,7 +154,7 @@ with ThreadPoolExecutor() as excecutor:
 
 #Do wybrania ze zbioru artykułow tylko tych ktore maja oznaczenie kategorii jako artykul (inne kategorie to np. wydarzenia, tworca, dzielo, galeria, miejsce - tu mogą byc instytucje, node, wideo, wydarzenie). Po wstępnym rozeznaniu kategoria dzieło tez jest do pobrania - są tam recenzje i notki o utworach
 
-#8362 artykułów w dnu 10.03.2023
+#8362 artykułów w dnu 13.03.2023
 
 artykul_category = []
 for x in all_articles_links:
@@ -172,21 +172,30 @@ for x in all_articles_links:
 
 #sixth_artykul_category_list = artykul_category[2501:3001]
 #seventh_artykul_category_list = artykul_category[3001:3501]
-
-
-
 #eighth_artykul_category_list = artykul_category[3501:4001]
 #ninth_artykul_category_list = artykul_category[4001:4501]
+#tenth_artykul_category_list = artykul_category[4501:5001]
+#eleventh_artykul_category_list = artykul_category[5001:5501]
+#twelfth_artykul_category_list = artykul_category[5501:6001]
+#thirteenth_artykul_category_list =  artykul_category[6001:6501]
+#fourteenth_artykul_category_list = artykul_category[6501:7001]
 
 
-tenth_artykul_category_list = artykul_category[4501:5001]
+
+
+fifteenth_artykul_category_list = artykul_category[7001:7501]
+sixteenth_artykul_category_list = artykul_category[7501:8001]
+seventeenth_artykul_category_list = artykul_category[8001:]
 
 
 # PAMIETAJ O ZMIANIE NAZWY!!
 #f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_2501-3000_{datetime.today().date()}.json'
+#f'C:\\Users\\Barbara Wachek\\Documents\\Python Scripts\\Culture.pl\\culture_pl_artykuly_4501-5000_{datetime.today().date()}.json'
 
-# with open(f'C:\\Users\\Barbara Wachek\\Documents\\Python Scripts\\Culture.pl\\culture_pl_artykuly_4001-4500_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-#     json.dump(all_results, f, ensure_ascii=False)   
+
+
+with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_6501-7000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results, f, ensure_ascii=False)   
   
 
 df = pd.DataFrame(all_results).drop_duplicates()
