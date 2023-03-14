@@ -54,7 +54,7 @@ driver_desktop = "C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe"
 
 all_results = []
 
-for link in tqdm(fourteenth_artykul_category_list):
+for link in tqdm(additional_list):
     chrome_options = Options()
     chrome_options.headless = True
     
@@ -155,6 +155,8 @@ with ThreadPoolExecutor() as excecutor:
 #Do wybrania ze zbioru artykułow tylko tych ktore maja oznaczenie kategorii jako artykul (inne kategorie to np. wydarzenia, tworca, dzielo, galeria, miejsce - tu mogą byc instytucje, node, wideo, wydarzenie). Po wstępnym rozeznaniu kategoria dzieło tez jest do pobrania - są tam recenzje i notki o utworach
 
 #8362 artykułów w dnu 13.03.2023
+#8489 artykułów w dniu 14.03.2023
+
 
 artykul_category = []
 for x in all_articles_links:
@@ -179,13 +181,14 @@ for x in all_articles_links:
 #twelfth_artykul_category_list = artykul_category[5501:6001]
 #thirteenth_artykul_category_list =  artykul_category[6001:6501]
 #fourteenth_artykul_category_list = artykul_category[6501:7001]
+#fifteenth_artykul_category_list = artykul_category[7001:7501]
+#sixteenth_artykul_category_list = artykul_category[7501:8001]
 
 
-
-
-fifteenth_artykul_category_list = artykul_category[7001:7501]
-sixteenth_artykul_category_list = artykul_category[7501:8001]
+additional_list = artykul_category[7837:8001]
 seventeenth_artykul_category_list = artykul_category[8001:]
+
+
 
 
 # PAMIETAJ O ZMIANIE NAZWY!!
@@ -194,7 +197,7 @@ seventeenth_artykul_category_list = artykul_category[8001:]
 
 
 
-with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_6501-7000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'C:\\Users\\Barbara Wachek\\Documents\\Python Scripts\\Culture.pl\\culture_pl_artykuly_7837-8000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)   
   
 
