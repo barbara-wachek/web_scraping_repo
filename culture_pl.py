@@ -23,9 +23,6 @@ from selenium.webdriver.chrome.options import Options
 # from selenium.common.exceptions import TimeoutException
 
 
-# #biblioteka 
-# import requests_html
-
 #%% def
 
 def get_sitemap_links(link):
@@ -54,7 +51,7 @@ driver_desktop = "C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe"
 
 all_results = []
 
-for link in tqdm(additional_list):
+for link in tqdm(fifth_artykul_category_list):
     chrome_options = Options()
     chrome_options.headless = True
     
@@ -156,6 +153,7 @@ with ThreadPoolExecutor() as excecutor:
 
 #8362 artykułów w dnu 13.03.2023
 #8489 artykułów w dniu 14.03.2023
+#8489 w dniu 15.03.2023
 
 
 artykul_category = []
@@ -165,7 +163,7 @@ for x in all_articles_links:
 
 
 #first_artykul_category_list = artykul_category[0:500]
-#second_artykul_category_list = artykul_category[501:1001]
+#second_artykul_category_list = artykul_category[500:1001]
 #third_artykul_category_list = artykul_category[1001:1501]
 #forth_artykul_category_list = artykul_category[1501:2001]
 #fifth_artykul_category_list = artykul_category[2001:2501]
@@ -183,10 +181,12 @@ for x in all_articles_links:
 #fourteenth_artykul_category_list = artykul_category[6501:7001]
 #fifteenth_artykul_category_list = artykul_category[7001:7501]
 #sixteenth_artykul_category_list = artykul_category[7501:8001]
+#additional_list = artykul_category[7837:8001]
 
 
-additional_list = artykul_category[7837:8001]
-seventeenth_artykul_category_list = artykul_category[8001:]
+
+# seventeenth_artykul_category_list = artykul_category[8001:8487]
+# the_rest = artykul_category[8487:]
 
 
 
@@ -197,7 +197,7 @@ seventeenth_artykul_category_list = artykul_category[8001:]
 
 
 
-with open(f'C:\\Users\\Barbara Wachek\\Documents\\Python Scripts\\Culture.pl\\culture_pl_artykuly_7837-8000_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_artykuly_2001-2500_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)   
   
 
@@ -225,12 +225,12 @@ for x in all_articles_links:
 
 df = pd.DataFrame(all_results)
 
-
+#Wziac jeszcze kategorie wydarzenia, dzielo, tworca
 
 # Autor często jest zapisany jako Culture.pl, a niżej u dołu artykułu jest podany właciwy autor
 
 
-
+#Inne kategorie, ktorych nie pobralam: galeria, miejsce, wideo, 
 
 
 
