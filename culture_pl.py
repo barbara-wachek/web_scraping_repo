@@ -151,7 +151,7 @@ for link in tqdm(fifth_artykul_category_list):
 
 #Do pobierania kategorii Dzieło
 all_results = []
-for link in tqdm(fifth_list_dzielo_category):
+for link in tqdm(eighth_list_dzielo_category):
 
     chrome_options = Options()
     chrome_options.headless = True
@@ -279,9 +279,6 @@ for x in all_articles_links:
 #fifteenth_artykul_category_list = artykul_category[7001:7501]
 #sixteenth_artykul_category_list = artykul_category[7501:8001]
 #additional_list = artykul_category[7837:8001]
-
-
-
 # seventeenth_artykul_category_list = artykul_category[8001:8487]
 # the_rest = artykul_category[8487:]
 
@@ -294,7 +291,7 @@ for x in all_articles_links:
 
 
 
-with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_dzielo_2000-2500_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_dzielo_3500-4763_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)   
   
 
@@ -312,13 +309,16 @@ for x in all_articles_links:
     if re.match(r'https\:\/\/culture\.pl\/pl\/dzielo\/.*', x):
         dzielo_category.append(x)
 
+#2023-03-23 #4763 dzielo category links
+
 #first_list_dzielo_category = dzielo_category[:500]
 # second_list_dzielo_category = dzielo_category[500:1000]
 # third_list_dzielo_category = dzielo_category[1000:1500]
 # forth_list_dzielo_category = dzielo_category[1500:2000]
 # fifth_list_dzielo_category = dzielo_category[2000:2500]
-
-
+#sixth_list_dzielo_category = dzielo_category[2500:3000]
+#seventh_list_dzielo_category = dzielo_category[3000:3500]
+eighth_list_dzielo_category = dzielo_category[3500:]
 
 
 
