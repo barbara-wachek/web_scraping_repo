@@ -206,6 +206,7 @@ df_archiwum_numerow = df[df['Data publikacji'].isna()]
 
 
 with pd.ExcelWriter(f"czas_kultury_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
+    df.to_excel(writer, 'Wszystkie artykuły', index=False, encoding='utf-8')
     df_archiwum_numerow.to_excel(writer, 'Archiwum numerów', index=False, encoding='utf-8')   
     df_archiwum_tekstow.to_excel(writer, 'Archiwum tekstów', index=False, encoding='utf-8')
     writer.save()  
