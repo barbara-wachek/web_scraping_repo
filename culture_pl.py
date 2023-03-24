@@ -473,7 +473,7 @@ for x in all_articles_links:
 
 
 
-# with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_wydarzenie_4001-7404_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+# with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_tworca_0001-4116_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
 #     json.dump(all_results, f, ensure_ascii=False)   
   
 
