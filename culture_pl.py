@@ -235,6 +235,188 @@ for link in tqdm(eighth_list_dzielo_category):
 
 
 
+#Do pobierania kategorii Wydarzenie
+all_results = []
+for link in tqdm(seventh_list_wydarzenie_category):
+    chrome_options = Options()
+    chrome_options.headless = True
+    
+    driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
+    driver.implicitly_wait(5)
+    driver.get(link)
+    
+    time.sleep(5)
+    soup = BeautifulSoup(driver.page_source, 'lxml')
+
+
+    date_of_publication = soup.find('div', class_='published')
+    if date_of_publication: 
+        date_of_publication = date_of_publication.text 
+        date = re.sub(r'(Opublikowany\:\s)(\d{1,2}\s)(\p{L}*)(\s)(\d{4})', r'\2\3\4\5', date_of_publication).strip()
+        lookup_table = {"sty": "01", "lut": "02", "mar": "03", "kwi": "04", "maj": "05", "cze": "06", "lip": "07", "sie": "08", "wrz": "09", "paź": "10", "lis": "11", "gru": "12"}
+        for k, v in lookup_table.items(): 
+            date = date.replace(k, v)
+            
+        result = time.strptime(date, "%d %m %Y")
+        changed_date = datetime.fromtimestamp(mktime(result))   
+        new_date = format(changed_date.date())
+           
+    else:
+        new_date = None #wpisy o tworcach i dzielach i nie maja dat
+    
+        
+    author = soup.find('div', class_='author-name')
+    if author:
+        author = author.text
+        author = re.sub(r'(Autor|Autorzy)(\:\s)(.*)', r'\3', author)
+        
+    else:
+        author = None
+    
+    
+    title_of_article = soup.find('h1', class_='title')
+    if title_of_article:
+        title_of_article = title_of_article.text
+    else:
+        title_of_article = None
+           
+    category = re.sub(r'(https?\:\/\/culture\.pl\/)(pl\/)?(\w*)(\/.*)', r'\3', link)
+    
+    content_of_article = soup.find('div', class_='event-content')
+
+    if content_of_article:
+        text_of_article = [x for x in content_of_article.find_all('div', class_='content')]
+        if text_of_article:
+            try:
+                text_of_article = " | ".join([x.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]).strip()
+            except AttributeError:
+                text_of_article = 'ERROR!'
+        else:
+            text_of_article = None
+
+
+    if text_of_article: 
+        text_of_article = re.sub(r'(.*Twitter)(.*)', r'\2', text_of_article)
+
+    tags = soup.find('div', class_='topic')
+    if tags: 
+        tags = ' | '.join([x.text.replace('#','') for x in soup.find('div', class_='topic')])
+    else:
+        tags = None
+    
+    
+    event_date = soup.find('div', class_='event-date-content')
+    if event_date:
+        event_date = event_date.text
+    else:
+        event_date = None
+
+    dictionary_of_article = {'Link': link, 
+                             'Data publikacji': new_date, 
+                             'Autor': author,
+                             'Kategoria': category,
+                             'Tytuł artykułu': title_of_article,
+                             'Tekst artykułu': text_of_article,
+                             'Tagi': tags,
+                             'Data wydarzenia': event_date
+                             }
+
+    all_results.append(dictionary_of_article)
+    
+
+#Do pobierania kategorii Twórca
+
+all_results = []
+for link in tqdm(tworca_category):
+    #link = 'https://culture.pl/pl/tworca/erwin-kruk'
+    #link = 'https://culture.pl/pl/tworca/przemyslaw-dakowicz'
+    chrome_options = Options()
+    chrome_options.headless = True
+    
+    driver = webdriver.Chrome("C:\\Users\\PBL_Basia\\Desktop\\ChromeDriver\\chromedriver.exe", options=chrome_options)
+    driver.implicitly_wait(5)
+    driver.get(link)
+    
+    time.sleep(5)
+    soup = BeautifulSoup(driver.page_source, 'lxml')
+
+
+    date_of_publication = soup.find('div', class_='published')
+    if date_of_publication: 
+        date_of_publication = date_of_publication.text 
+        date = re.sub(r'(Opublikowany\:\s)(\d{1,2}\s)(\p{L}*)(\s)(\d{4})', r'\2\3\4\5', date_of_publication).strip()
+        lookup_table = {"sty": "01", "lut": "02", "mar": "03", "kwi": "04", "maj": "05", "cze": "06", "lip": "07", "sie": "08", "wrz": "09", "paź": "10", "lis": "11", "gru": "12"}
+        for k, v in lookup_table.items(): 
+            date = date.replace(k, v)
+            
+        result = time.strptime(date, "%d %m %Y")
+        changed_date = datetime.fromtimestamp(mktime(result))   
+        new_date = format(changed_date.date())
+           
+    else:
+        new_date = None #wpisy o tworcach i dzielach i nie maja dat
+    
+        
+    author = soup.find('div', class_='author-name')
+    if author:
+        author = author.text
+        author = re.sub(r'(Autor|Autorzy)(\:\s)(.*)', r'\3', author)
+        
+    else:
+        author = None
+    
+    
+    title_of_article = soup.find('h1', class_='title')
+    if title_of_article:
+        title_of_article = title_of_article.text
+    else:
+        title_of_article = None
+           
+    category = re.sub(r'(https?\:\/\/culture\.pl\/)(pl\/)?(\w*)(\/.*)', r'\3', link)
+    
+    content_of_article = soup.find('div', class_='artist-content')
+
+    if content_of_article:
+        text_of_article = [x for x in content_of_article.find_all('div', class_='content')]
+        if text_of_article:
+            try:
+                text_of_article = " | ".join([x.text.replace('\n', ' ') for x in content_of_article.find_all('div', class_='content')]).strip()
+            except AttributeError:
+                text_of_article = 'ERROR!'
+        else:
+            text_of_article = None
+
+
+    if text_of_article: 
+        text_of_article = re.sub(r'(.*Twitter)(.*)', r'\2', text_of_article)
+
+    tags = soup.find('div', class_='topic')
+    if tags: 
+        tags = ' | '.join([x.text.replace('#','') for x in soup.find('div', class_='topic')])
+    else:
+        tags = None
+    
+    
+    date_of_life = soup.find('div', class_='date-of-life')
+    if date_of_life:
+        date_of_life = date_of_life.text
+    else:
+        date_of_life = None
+
+    dictionary_of_article = {'Link': link, 
+                             'Data publikacji': new_date, 
+                             'Autor': author,
+                             'Kategoria': category,
+                             'Tytuł artykułu': title_of_article,
+                             'Tekst artykułu': text_of_article,
+                             'Tagi': tags,
+                             'Lata życia': date_of_life
+                             }
+
+    all_results.append(dictionary_of_article)
+
+
+
 
 
 #%%main
@@ -291,8 +473,8 @@ for x in all_articles_links:
 
 
 
-with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_dzielo_3500-4763_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)   
+# with open(f'C:\\Users\\PBL_Basia\\Documents\\My scripts\\Culture.pl - pliki json\\culture_pl_wydarzenie_4001-7404_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+#     json.dump(all_results, f, ensure_ascii=False)   
   
 
 df = pd.DataFrame(all_results).drop_duplicates()
@@ -318,7 +500,7 @@ for x in all_articles_links:
 # fifth_list_dzielo_category = dzielo_category[2000:2500]
 #sixth_list_dzielo_category = dzielo_category[2500:3000]
 #seventh_list_dzielo_category = dzielo_category[3000:3500]
-eighth_list_dzielo_category = dzielo_category[3500:]
+#eighth_list_dzielo_category = dzielo_category[3500:]
 
 
 
@@ -328,14 +510,29 @@ for x in all_articles_links:
         wydarzenie_category.append(x)
 
 
+
+#2023-03-23 7403 artykułów
+
+#first_list_wydarzenie_category = wydarzenie_category[0:500]
+# second_list_wydarzenie_category = wydarzenie_category[500:1000]
+# third_list_wydarzenie_category = wydarzenie_category[1000:2000]
+# forth_list_wydarzenie_category = wydarzenie_category[2000:3000]
+#fifth_list_wydarzenie_category = wydarzenie_category[3000:4000]
+#sixth_list_wydarzenie_category = wydarzenie_category[3368:4000]
+#seventh_list_wydarzenie_category = wydarzenie_category[4000:]
+
+
+
 tworca_category = []
 for x in all_articles_links:
     if re.match(r'https\:\/\/culture\.pl\/pl\/tworca\/.*', x):
         tworca_category.append(x)
         
         
+first_list_tworca_category = tworca_category[0:2000]        
         
-        
+
+
 
 df = pd.DataFrame(all_results)
 
