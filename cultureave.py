@@ -25,20 +25,34 @@ def get_links_of_sitemap(sitemap_link):
     return articles_links
 
 
-
-
-
-
-
-
 def dictionary_of_article(link):
     #link = 'https://www.cultureave.com/przesmiewczy-glos-ryszarda-drucha/'
     #link = 'https://www.cultureave.com/iii-kongres-teatru-polskiego-w-chicago/'
+    #link = 'https://www.cultureave.com/karnawalowe-tradycje/'
+    #link = 'https://www.cultureave.com/wszystko-zaczelo-sie-w-bayreuth/'
+    #link = 'https://www.cultureave.com/polacy-nie-gesi-i-swoj-jezyk-maja-jerzy-korey-krzeczowski-1/'
+    #link = 'https://www.cultureave.com/spotkanie-z-henrykiem-czyzem/'
+    #link = 'https://www.cultureave.com/muzyczna-igla-w-australijskim-stogu-siana/'
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
-    author = soup.find('a', class_='url fn n').text
-    
+    try:
+        specified_element = soup.find_all('p')
+        author = [e for e in specified_element if [el.name for el in e.findChildren()][:2] == ['strong', 'em']][0]
+        author = author.find('strong').text
+    except IndexError:
+        try:
+            specified_element = soup.find_all('mark')
+            author = [e for e in specified_element if [el.name for el in e.findChildren()][:2] == ['strong', 'em']][0]
+            author = author.find('strong').text
+        except IndexError:
+            try:
+                specified_element = soup.find_all('span')
+                author = [e for e in specified_element if [el.name for el in e.findChildren()][:2] == ['strong', 'em']][0]
+                author = author.find('strong').text
+            except IndexError:
+                author = None
+      
     date_of_publication = soup.find('time', class_='entry-date published').text
     date = re.sub(r'(.*\s)(\d{1,2}\s)(.*)(\s\d{4})(\—\s[\w]*\s[\w]*\s[\w]*)', r'\2\3\4', date_of_publication).strip()
     lookup_table = {"stycznia": "01", "lutego": "02", "marca": "03", "kwietnia": "04", "maja": "05", "czerwca": "06", "lipca": "07", "sierpnia": "08", "września": "09", "października": "10", "listopada": "11", "grudnia": "12"}
@@ -119,11 +133,6 @@ def dictionary_of_article(link):
     all_results.append(dictionary_of_article)
 
 
-
-
-
-
-
 #%% main
 sitemap_links = ['https://www.cultureave.com/post-sitemap2.xml', 'https://www.cultureave.com/post-sitemap1.xml']
 
@@ -137,7 +146,7 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
 
-with open(f'cultureave_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/cultureave_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)        
 
 
@@ -146,9 +155,8 @@ df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
 
 
-with pd.ExcelWriter(f"cultureave_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
-    df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
-    writer.save()     
+with pd.ExcelWriter(f"data/cultureave_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
+    df.to_excel(writer, 'Posts', index=False)
    
 
 #%%Uploading files on Google Drive
@@ -156,12 +164,11 @@ with pd.ExcelWriter(f"cultureave_{datetime.today().date()}.xlsx", engine='xlsxwr
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"cultureave_{datetime.today().date()}.xlsx", f'cultureave_{datetime.today().date()}.json']
+upload_file_list = [f"data/cultureave_{datetime.today().date()}.xlsx", f'data/cultureave_{datetime.today().date()}.json']
 for upload_file in upload_file_list:
-	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+	gfile = drive.CreateFile({'title': upload_file.replace('data/', ''), 'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})
 	gfile.SetContentFile(upload_file)
 	gfile.Upload()  
-
 
 
 
