@@ -1,7 +1,7 @@
 #%%import
 from __future__ import unicode_literals
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import pandas as pd
 import regex as re
 import time
@@ -72,55 +72,84 @@ soup = BeautifulSoup(r, 'lxml')
 articles = soup.find_all('div', class_='art-article')
 results.extend(articles)
 next_page = soup.find('a', string='Następny artykuł')
+art_counter = [link] * len(articles)
 
-
+article_links = art_counter[:]
 iteration = 1
 while next_page:
     r = requests.get(f"http://gazetakulturalna.zelow.pl{next_page['href']}").content
     soup = BeautifulSoup(r, 'lxml')
     articles = soup.find_all('div', class_='art-article')
+    art_counter = [f"http://gazetakulturalna.zelow.pl{next_page['href']}"] * len(articles)
+    article_links.extend(art_counter)
     results.extend(articles)
     next_page = soup.find('a', string='Następny artykuł')
     print("{:.0%}".format(iteration/67))
     iteration += 1
     
+all_results = [] 
+for article, link in tqdm(zip(results, article_links), total=len(results)):
+    
+    if [e.find_all('span', attrs={'style': 'font-size: x-large; color: #000000;'})[0] for e in article.find_all('p') if e.find_all('span', attrs={'style': 'font-size: x-large; color: #000000;'})]:
+    
+        try:
+            author = [e.find_all('span', attrs={'style': 'font-size: 12pt;'})[0] for e in article.find_all('p') if e.find_all('span', attrs={'style': 'font-size: 12pt;'})][0].text
+        except IndexError:
+            try:
+                author = [e.find_all('span', attrs={'style': 'font-size: medium; color: #000000;'})[0] for e in article.find_all('p') if e.find_all('span', attrs={'style': 'font-size: medium; color: #000000;'})][0].text
+            except IndexError:
+                author = None
+    
+        title = [e.find_all('span', attrs={'style': 'font-size: x-large; color: #000000;'})[0] for e in article.find_all('p') if e.find_all('span', attrs={'style': 'font-size: x-large; color: #000000;'})][0].text
+    
+        text_of_article = ''.join([ele for ele in ['/n'.join([el.text for el in e.find_all('span', attrs={'style': 'font-family: arial, helvetica, sans-serif; font-size: 14pt;'})]) for e in article.find_all('p') if e.find_all('span', attrs={'style': 'font-family: arial, helvetica, sans-serif; font-size: 14pt;'})] if ele.strip()])
+        
+        zdjecia_grafiki = True if [x['src'] for x in article.find_all('img') if x.get('src')] else False
+        
+        try:
+            opis_ksiazki = [e for i,e in enumerate(article) if i == article.index(article.find('p', string=re.compile('^\_+')))+2][0].text
+        except ValueError:
+            opis_ksiazki = None
+           
+        try: 
+            photos_links = ' | '.join([f"http://gazetakulturalna.zelow.pl{x['src']}" for x in article.find_all('img')])  
+        except (AttributeError, KeyError, IndexError):
+            photos_links = None
+        
+        
+        b = [e.find(('strong', 'em')) for e in article.find_all('p') if e.find(('strong', 'em'))]
+        
+        b_tags = [e.name for e in b]
+        b_tags2 = [[el.name for el in e.descendants] for e in b]
+        
+        b_tags_all = list(zip(b_tags, [e[0] for e in b_tags2]))
+        
+        poem_titles = ' | '.join([e[0].text for e in (zip(b, b_tags_all)) if e[-1] == ('strong', 'em')])
+    
+        dictionary_of_article = {"Link": link, 
+                                 "Data publikacji": None,
+                                 "Tytuł artykułu": title,
+                                 "Tekst artykułu": text_of_article,
+                                 "Autor": author,
+                                 'Zdjęcia/Grafika': True if [x['src'] for x in article.find_all('img') if x.get('src')] else False,
+                                 'Filmy': True if [x['src'] for x in article.find_all('iframe')] else False,
+                                 'Linki do zdjęć': photos_links,
+                                 'Tytuły wierszy': poem_titles,
+                                 'Opis książki': opis_ksiazki
+                                 }
+        all_results.append(dictionary_of_article)
 
-results[1]
-
-results[1].find('p').find_all('span', attrs={'style': 'font-size: 12pt'})    
-
-
-[e.text for e in next_page]
-
-
-
-html_text_sitemap = requests.get(link).text
-soup = BeautifulSoup(html_text_sitemap, 'lxml')
-links_pages = [e.text for e in soup.find_all('loc')]
-return links_pages
-
-
-
-
-
-
-articles_links = [e for e in get_links('https://martafox.pl/sitemap-1.xml') if 'martafox.pl/2' in e]
-
-all_results = []
-errors = []
-with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(create_dictionary_of_article, articles_links),total=len(articles_links)))
 
 #%% writing files
 
-with open(f'data/martafox_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/gazetakulturalnazelow_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)         
     
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
 
-with pd.ExcelWriter(f"data/martafox_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
+with pd.ExcelWriter(f"data/gazetakulturalnazelow_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
     df.to_excel(writer, 'Posts', index=False)
 
 #%%Uploading files on Google Drive
@@ -128,7 +157,7 @@ with pd.ExcelWriter(f"data/martafox_{datetime.today().date()}.xlsx", engine='xls
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"data/martafox_{datetime.today().date()}.xlsx", f'data/martafox_{datetime.today().date()}.json']
+upload_file_list = [f"data/gazetakulturalnazelow_{datetime.today().date()}.xlsx", f'data/gazetakulturalnazelow_{datetime.today().date()}.json']
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'title': upload_file.replace('data/', ''), 'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
 	gfile.SetContentFile(upload_file)
