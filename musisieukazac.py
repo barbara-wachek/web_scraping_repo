@@ -1,0 +1,215 @@
+#%%import
+from __future__ import unicode_literals
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import regex as re
+import time
+from time import mktime
+from tqdm import tqdm  #licznik
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+import json
+from datetime import datetime
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+
+
+#%% def
+
+def get_links_of_sitemap(sitemap_link):
+    # sitemap_link = 'https://www.musisieukazac.pl/sitemap.xml'
+    html_text = requests.get(sitemap_link).text
+    soup = BeautifulSoup(html_text, "html.parser")
+    links = [x.text for x in soup.find_all('loc') if re.findall(r'^https://www.musisieukazac.pl/\d+', x.text)]
+    return links
+
+
+def dictionary_of_article(link):
+    link = articles_links[0]
+    link = articles_links[1]
+    link = articles_links[2]
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'html.parser')
+    
+    date_of_publication = soup.find('time', class_='entry-date published')['datetime']
+    date_of_publication = datetime.fromisoformat(date_of_publication).date()
+    
+    text_of_article = soup.find('div', class_='entry-content')
+    article = text_of_article.text.strip().replace('\n', ' ').replace('\xa0', ' ')
+    author = " | ".join([x.text for x in text_of_article.find_all('p', attrs={'style':'text-align: right;'})])
+    title_of_article = soup.find('h1', class_='entry-title').text
+    tags = ''.join([x.text.replace('\n','').strip() for x in soup.find_all('span', class_='category-links term-links category-style-normal')])
+    try:
+        external_links = ' | '.join([x for x in [x['href'] for x in text_of_article.find_all('a')] if not re.findall(r'afront\.org', x)])
+    except (AttributeError, KeyError, IndexError):
+        external_links = None
+        
+    try: 
+        photos_links = ' | '.join([x['src'] for x in text_of_article.find_all('img')][1:])  
+    except (AttributeError, KeyError, IndexError):
+        photos_links = None
+    
+    dictionary_of_article = {"Link": article_link, 
+                             "Data publikacji": new_date,
+                             "Tytuł artykułu": title_of_article.replace('\xa0', ' '),
+                             "Tekst artykułu": article,
+                             "Autor": author,
+                             "Tagi": tags,
+                             'Linki zewnętrzne': external_links,
+                             'Zdjęcia/Grafika': True if [x['src'] for x in text_of_article.find_all('img')] else False,
+                             'Filmy': True if [x['src'] for x in text_of_article.find_all('iframe')] else False,
+                             'Linki do zdjęć': photos_links
+                             }
+    
+    all_results.append(dictionary_of_article)
+    
+    
+    
+    
+    try:
+        specified_element = soup.find_all('p')
+        author = [e for e in specified_element if [el.name for el in e.findChildren()][:2] == ['strong', 'em']][0]
+        author = author.find('strong').text
+    except IndexError:
+        try:
+            specified_element = soup.find_all('mark')
+            author = [e for e in specified_element if [el.name for el in e.findChildren()][:2] == ['strong', 'em']][0]
+            author = author.find('strong').text
+        except IndexError:
+            try:
+                specified_element = soup.find_all('span')
+                author = [e for e in specified_element if [el.name for el in e.findChildren()][:2] == ['strong', 'em']][0]
+                author = author.find('strong').text
+            except IndexError:
+                author = None
+      
+    date_of_publication = soup.find('time', class_='entry-date published').text
+    date = re.sub(r'(.*\s)(\d{1,2}\s)(.*)(\s\d{4})(\—\s[\w]*\s[\w]*\s[\w]*)', r'\2\3\4', date_of_publication).strip()
+    lookup_table = {"stycznia": "01", "lutego": "02", "marca": "03", "kwietnia": "04", "maja": "05", "czerwca": "06", "lipca": "07", "sierpnia": "08", "września": "09", "października": "10", "listopada": "11", "grudnia": "12"}
+    for k, v in lookup_table.items():
+        date = date.replace(k, v)
+    result = time.strptime(date, "%d %m %Y")
+    changed_date = datetime.fromtimestamp(mktime(result))   
+    new_date = format(changed_date.date())
+    
+    
+    title_of_article = soup.find('h1', class_='entry-title')
+    if title_of_article: 
+        title_of_article = title_of_article.text
+    else:
+        title_of_article = None
+        
+        
+    content_of_article = soup.find('div', class_='entry-content')
+    if content_of_article:
+        text_of_article = " | ".join([x.text.replace('\xa0', '') for x in content_of_article.find_all('p') if not x.find('figure')])
+    else:
+        text_of_article = None     
+      
+
+
+    category = [x.text.strip() for x in soup.find_all('span', class_='cat-links')]
+    if category != []:
+        category = " | ".join(category)
+    else:
+        category = None
+    
+    
+
+    
+    tags = [x.text.strip() for x in soup.find_all('span', class_='tags-links')]
+    if tags != []:
+        tags = " | ".join([x.text.strip() for x in soup.find_all('span', class_='tags-links')])
+    else:
+        tags = None
+    
+
+
+    
+    external_links = [x for x in [x.get('href') for x in content_of_article.find_all('a') if x.get('href') != None] if not re.findall(r'cultureave|images|mail|#', x)]
+    if external_links: 
+        external_links = ' | '.join(external_links)
+    else:
+        external_links = None    
+        
+    photos_links = [x['src'] for x in content_of_article.find_all('img') if not re.findall(r'plugins', x['src'])]  
+    if photos_links != '':
+        photos_links = ' | '.join(photos_links)
+    else:
+        photos_links = None
+        
+        
+    pdf_link = content_of_article.find('a', class_='pdfprnt-button pdfprnt-button-pdf')   
+    if pdf_link:
+        pdf_link = pdf_link['href']
+    else:
+        pdf_link = None
+        
+    
+    dictionary_of_article = {'Link': link,
+                             'Data publikacji': new_date,
+                             'Autor': author,
+                             'Tytuł artykułu': title_of_article,
+                             'Kategoria': category,
+                             'Tekst artykułu': text_of_article,
+                             'Tagi': tags,
+                             'Link do pliku PDF': pdf_link,
+                             'Linki zewnętrzne': external_links,
+                             'Zdjęcia/Grafika': True if [x['src'] for x in content_of_article.find_all('img') if not re.findall(r'(bookmark)|(email)|(twitter)|(facebook)', x['src'])] else False,
+                             'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
+                             'Linki do zdjęć': photos_links
+                            }
+    
+    all_results.append(dictionary_of_article)
+
+
+#%% main
+articles_links = get_links_of_sitemap('https://www.musisieukazac.pl/sitemap.xml')
+
+
+all_results = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
+
+
+with open(f'data/cultureave_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results, f, ensure_ascii=False)        
+
+
+df = pd.DataFrame(all_results)
+df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
+df = df.sort_values('Data publikacji', ascending=False)
+
+
+with pd.ExcelWriter(f"data/cultureave_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
+    df.to_excel(writer, 'Posts', index=False)
+   
+
+#%%Uploading files on Google Drive
+
+gauth = GoogleAuth()           
+drive = GoogleDrive(gauth)   
+      
+upload_file_list = [f"data/cultureave_{datetime.today().date()}.xlsx", f'data/cultureave_{datetime.today().date()}.json']
+for upload_file in upload_file_list:
+	gfile = drive.CreateFile({'title': upload_file.replace('data/', ''), 'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})
+	gfile.SetContentFile(upload_file)
+	gfile.Upload()  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
