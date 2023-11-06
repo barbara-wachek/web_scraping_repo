@@ -10,7 +10,6 @@ from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
-from datetime import datetime
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
