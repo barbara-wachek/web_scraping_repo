@@ -7,3 +7,5 @@
 \chromedriver.exe
 \ghostdriver.log
 \data
+geckodriver.exe
+geckodriver.log
