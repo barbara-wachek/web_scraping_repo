@@ -15,6 +15,13 @@ from pydrive.drive import GoogleDrive
 
 #%%def
 
+def get_numbers(link):
+    # link = 'http://gazetakulturalna.zelow.pl/index.php/archiwum-gazety'
+    r = requests.get(link).text
+    soup = BeautifulSoup(r, 'lxml')
+    links = soup.select('#archive-items a')
+    return [(e.text, f"http://gazetakulturalna.zelow.pl/{e['href']}") for e in links]
+
 def create_dictionary_of_article(article_link):
     
     try:
@@ -62,6 +69,23 @@ def create_dictionary_of_article(article_link):
         return create_dictionary_of_article(article_link)
 
 #%%main 
+
+numbers = get_numbers('http://gazetakulturalna.zelow.pl/index.php/archiwum-gazety')
+
+for n, link in numbers:
+    n, link = numbers[3]
+    r = requests.get(link).text
+    soup = BeautifulSoup(r, 'p~ p+ p a')
+    links = soup.find('div', class_='art-article')
+    links = [e for e in links.find_all('p') if len(e.text) > 1 and e.text[0].isnumeric()]
+    [e.text.split(' - ')[-1] for e in links][1:]
+    return [(e.text, f"http://gazetakulturalna.zelow.pl/{e['href']}") for e in links]
+    
+dir('a')    
+    p~ p+ p a
+    
+
+
 
 link = 'http://gazetakulturalna.zelow.pl/index.php'
 
