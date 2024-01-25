@@ -10,6 +10,10 @@ from datetime import datetime
 from time import mktime
 import json
 from functions import date_change_format_long
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 #%% def
 def web_scraping_sitemap(sitemap):
@@ -17,6 +21,17 @@ def web_scraping_sitemap(sitemap):
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
     links = [e.text for e in soup.find_all('loc')]
     return links   
+
+
+driver = webdriver.Firefox()
+driver.get('https://joannaroszak.blogspot.com/2020/06/ile-wazy-patek-sniegu.html')
+element = WebDriverWait(driver, 10).until(
+   EC.presence_of_element_located((By.CLASS_NAME, "article-content entry-content"))
+)
+html_text = driver.page_source
+soup = BeautifulSoup(html_text, 'lxml')
+
+
     
 def dictionary_of_article(article_link):
     article_link = articles_links[99]
@@ -28,28 +43,13 @@ def dictionary_of_article(article_link):
     soup = BeautifulSoup(html_text, 'lxml')
      
     
-    date_of_publication = soup.find('abbr', class_='time published')
-
-.text
-    date_of_publication = date_change_format_long(date_of_publication)
+    date_of_publication = soup.find('abbr', class_='time published')['title'][:10]
+   
+    content_of_article = soup.find('div', class_='article-content entry-content')
     
-    date_of_publication = date_change_format_long(soup.find('h2', class_='date-header').text)
-
-
-    content_of_article = soup.find('div', class_='post-body entry-content')
-    
-    tags_span = soup.find('span', class_='post-labels').findChildren('a')
-    if tags_span:
-        tags = " | ".join([tag.text for tag in tags_span])
-    else:
-        tags = None
+    tags = None
   
-    author = soup.find('span', attrs={'itemprop':'name'})
-    if author:
-        author = author.text
-    else:
-        author = None
-
+    author = 'Joanna Roszak'
 
     text_of_article = content_of_article.text.strip().replace('\n', '')
  
