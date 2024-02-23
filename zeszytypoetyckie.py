@@ -26,6 +26,9 @@ def get_links_of_sitemap(sitemap_link):
 
 def dictionary_of_article(link):
     # link = articles_links[100]
+    # link = 'https://zeszytypoetyckie.pl/krytyka/5-o-poezji-artura-midzyrzeckiego'
+    # link = 'https://zeszytypoetyckie.pl/poezja/1492-dariusz-patkowski'
+    # link = 'https://zeszytypoetyckie.pl/wydarzenia/1518-spotkanie-z-dawidem-jungiem-i-karolem-soberskim'
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'html.parser')
     
@@ -34,17 +37,26 @@ def dictionary_of_article(link):
     content_of_article = soup.find('td', {'valign': 'top'})
     
     tags = None
-  
-    author = soup.find('span', {'style': 'color:#000000;'})
-    if author and author.find('strong'):
-        author = author.find('strong').text
-    else: author = None
+    
+    if '/krytyka/' in link:
+        author = soup.find('p', {'style': 'margin-bottom: 0cm'})
+        if author:
+            author = author.text
+        else: author = None
+    elif '/poezja/' in link:
+        author = soup.find('td', class_='contentheading')
+        author = author.text.strip()
+    else:    
+        author = soup.find('span', {'style': 'color:#000000;'})
+        if author and author.find('strong'):
+            author = author.find('strong').text
+        else: author = None
     
     if content_of_article:
         text_of_article = content_of_article.text.strip().replace('\n', '')
     else:
         text_of_article = None
- 
+    
     title_of_article = soup.find('td', class_='contentheading')
     if title_of_article:
         title_of_article = title_of_article.text.strip()     
@@ -65,12 +77,19 @@ def dictionary_of_article(link):
         external_links = None
         photos_links = None
         
+    if '/poezja/' in link:    
+        titles_of_poems = content_of_article.find_all('span', {'style': 'color:#000000;'})
+        titles_of_poems = ' | '.join([e.find('b').text for e in titles_of_poems if e.find('b') and e.find('b').text != title_of_article])
+    else: 
+        titles_of_poems = None
+        
     dictionary_of_article = {'Link': link,
                              'Data publikacji': date_of_publication,
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
+                             'Tytuły wierszy': titles_of_poems,
                              'Linki zewnętrzne': external_links,
                              'Linki do zdjęć': photos_links
                              }
