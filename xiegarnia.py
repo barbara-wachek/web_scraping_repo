@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from functions import date_change_format_short
 
 
 #%% def
@@ -28,106 +29,103 @@ def get_links_of_sitemap(sitemap_link):
         art_links.extend(site_links)  
     return art_links
 
-#sprawdzić kategorie (są w url) i na tej podstawie sprawdzić, czy strony nie mają różnych struktur
+# kategorie = set([e.split('/')[3] for e in articles_links if e.split('/')[3]])
 
-kategorie = set([e.split('/')[3] for e in articles_links])
+# examples = []
+# for el in kategorie:
+#     for e in articles_links:
+#         if f"/{el}/" in e:
+#             examples.append(e)
+#             break
 
-# artykuly
-# wideo
-# polecane
-# media-o-nas
-# extra
-# recenzje
-# aktualnosci
-# bestsellery
-# nowosci
-# konkursy
-#sprawdzić strukturę wszystkich
-
-'https://xiegarnia.pl/wideo/pawel-konjo-konnak-poleca-2/'.split('/')
 
 def dictionary_of_article(link):
-    # link = 'https://www.aict.art.pl/2024/02/26/przywrocone-arcydziela-wojaczek-1999-rez-lech-majewski-gosc-krzysztof-siwczyk/'
-    # link = 'https://www.aict.art.pl/2024/02/26/jerzy-jarzebski-nie-zyje/'
-    # link = 'https://www.aict.art.pl/2020/04/04/kongres-aict-za-rok/'
+    # link = examples[9]
+    # link = 'https://xiegarnia.pl/recenzje/wodne-szalenstwo/'
+
+    html_text = requests.get(link).text
+    soup = BeautifulSoup(html_text, 'html.parser')
+    
+    date_of_publication = date_change_format_short(soup.find('div', class_='date left').text)
+   
+    content_of_article = soup.find('section', class_='section-article').find('article')
+    
+    tags = link.split('/')[3]
+    
+    author = soup.find('a', rel='author')
+    if author:
+        author = author.text
+    else:
+        author = None
+    
+    text_of_article = '\n'.join([e.text.strip().replace('\n', '') for e in content_of_article.find_all('p')])
+    
+    title_of_article = soup.find('h2', class_='article-header')
+ 
+    if title_of_article:
+        title_of_article = title_of_article.text.strip()     
+    else:
+        title_of_article = None
+
     try:
-        html_text = requests.get(link).text
-        soup = BeautifulSoup(html_text, 'html.parser')
+        external_links = ' | '.join(set([el['href'] for sub in [e.find_all('a') for e in content_of_article.find_all('p')] for el in sub if 'xiegarnia' not in el['href']]))
+    except KeyError:
+        external_links = None
         
-        date_of_publication = soup.find('time')['datetime'][:10]
-       
-        content_of_article = soup.find('div', class_='nv-content-wrap entry-content')
-        
-        # tags = '|'.join([e.text for e in soup.find_all('a', rel='tag')][1:])
-        
-        author = [e.find('strong').text for e in content_of_article.find_all('p') if e.find('strong')]
-        try:
-            author = [e for e in author if e[0].isupper() and e[1].islower()]
-            if author:
-                author = author[0]
-            else:
-                author = [e.find('b').text for e in content_of_article.find_all('p') if e.find('b')]
-                try:
-                    author = [e for e in author if e[0].isupper() and e[1].islower()]
-                    if author:
-                        author = author[0]
-                    else:
-                        author = None
-                except:
-                    author = None
-        except IndexError:
-            author = ''.join([el.text for sub in [e.find_all('strong') for e in content_of_article.find_all('p') if e.find('strong')] for el in sub])
-            if len(author) > 100:
-                author = None
-        
-        text_of_article = '\n'.join([e.text.strip().replace('\n', '') for e in content_of_article])
-        
-        title_of_article = soup.find('h1', class_='title entry-title')
-     
-        if title_of_article:
-            title_of_article = title_of_article.text.strip()     
-        else:
-            title_of_article = None
+    try:
+        photos_links = ' | '.join([x['src'] for x in soup.find('article').find_all('img')])
+    except KeyError:
+        photos_links = None
     
+    if tags == 'recenzje':
         try:
-            external_links = ' | '.join(set([el['href'] for sub in [e.find_all('a') for e in content_of_article.find_all('p')] for el in sub if 'aict.art.pl' not in el['href']]))
-        except KeyError:
-            external_links = None
-            
-        try:
-            photos_links = ' | '.join([x['src'] for x in soup.find('article').find_all('img')])
-        except KeyError:
-            photos_links = None
-    
-        dictionary_of_article = {'Link': link,
-                                 'Data publikacji': date_of_publication,
-                                 'Autor': author,
-                                 'Tytuł artykułu': title_of_article,
-                                 'Tekst artykułu': text_of_article,
-                                 'Linki zewnętrzne': external_links,
-                                 'Linki do zdjęć': photos_links
-                                 }
-    
-        all_results.append(dictionary_of_article)
-    except TypeError:
-        errors.append(link)
+            book_title = soup.find('h4', class_='aside-header').text
+            book_author = soup.find_all('dd')[0].text.strip()
+            book_publisher = soup.find_all('dd')[1].text.strip()
+            book_date = soup.find_all('dd')[2].text.strip()
+        except AttributeError:
+            book_title = None
+            book_author = None
+            book_publisher = None
+            book_date = None
+    else:
+        book_title = None
+        book_author = None
+        book_publisher = None
+        book_date = None
+
+    dictionary_of_article = {'Link': link,
+                             'Data publikacji': date_of_publication,
+                             'Autor': author,
+                             'Tagi': tags,
+                             'Tytuł artykułu': title_of_article,
+                             'Tekst artykułu': text_of_article,
+                             'Linki zewnętrzne': external_links,
+                             'Linki do zdjęć': photos_links,
+                             'Filmy': True if [x['src'] for x in content_of_article.find_all('iframe')] else False,
+                             'Autor książki': book_author,
+                             'Tytuł książki': book_title,
+                             'Wydawnictwo': book_publisher,
+                             'Rok i miejsce wydania': book_date}
+
+    all_results.append(dictionary_of_article)
     
 #%% main
 articles_links = get_links_of_sitemap('https://xiegarnia.pl/sitemap_index.xml')
+articles_links = [e for e in articles_links if not any(el in e for el in ['/konkursy/', '/polecane/', '/media-o-nas/']) and e != 'https://xiegarnia.pl/']
 
 all_results = []
-errors = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))   
 
-with open(f'data/aict_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/xiegarnia_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False, default=str)        
 
 df = pd.DataFrame(all_results)
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
 
-with pd.ExcelWriter(f"data/aict_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
+with pd.ExcelWriter(f"data/xiegarnia_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
     df.to_excel(writer, 'Posts', index=False)
 
 #%%Uploading files on Google Drive
@@ -135,7 +133,7 @@ with pd.ExcelWriter(f"data/aict_{datetime.today().date()}.xlsx", engine='xlsxwri
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"data/aict_{datetime.today().date()}.xlsx", f'data/aict_{datetime.today().date()}.json']
+upload_file_list = [f"data/xiegarnia_{datetime.today().date()}.xlsx", f'data/xiegarnia_{datetime.today().date()}.json']
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'title': upload_file.replace('data/', ''), 'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})
 	gfile.SetContentFile(upload_file)
