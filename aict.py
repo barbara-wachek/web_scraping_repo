@@ -24,9 +24,7 @@ def get_links_of_sitemap(sitemap_link):
     return links
 
 def dictionary_of_article(link):
-    # link = 'https://www.aict.art.pl/2024/02/26/przywrocone-arcydziela-wojaczek-1999-rez-lech-majewski-gosc-krzysztof-siwczyk/'
-    # link = 'https://www.aict.art.pl/2024/02/26/jerzy-jarzebski-nie-zyje/'
-    # link = 'https://www.aict.art.pl/2020/04/04/kongres-aict-za-rok/'
+    # link = 'https://www.aict.art.pl/2024/02/24/prapremiera-geniusza-w-rezyserii-jerzego-stuhra-w-teatrze-polonia/'
     try:
         html_text = requests.get(link).text
         soup = BeautifulSoup(html_text, 'html.parser')
@@ -39,7 +37,7 @@ def dictionary_of_article(link):
         
         author = [e.find('strong').text for e in content_of_article.find_all('p') if e.find('strong')]
         try:
-            author = [e for e in author if e[0].isupper() and e[1].islower()]
+            author = [e for e in author if e[0].isupper() and e[1].islower() and e.split(' ')[1][0].isupper()]
             if author:
                 author = author[0]
             else:
