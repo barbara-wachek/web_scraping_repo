@@ -46,7 +46,7 @@ def dictionary_of_article(article_link):
 
     # author
     if author_div := soup.find('div', class_='entry-author'):       
-        author = author_div.text
+        author = author_div.text.strip()
     else:
         author = None
         
