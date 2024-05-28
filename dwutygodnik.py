@@ -148,8 +148,6 @@ all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
     
-#check
-test = [e for e in all_results if e['Link'] == 'https://www.dwutygodnik.com/artykul/11167-dla-wydawcy-zostaje-2-procent.html']
 
 with open(f'data/dwutygodnik_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)        
