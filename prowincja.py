@@ -46,33 +46,31 @@ def dictionary_of_article(link):
         html_text = requests.get(link).text
         soup = BeautifulSoup(html_text, 'html.parser')
         
-        date_of_publication = soup.find('meta', {'name': 'article:published_time'})['content'][:10]
+        date_of_publication = soup.find('time', {'class': 'entry-date published'})['datetime'][:10]
        
-        content_of_article = soup.find('div', class_='entry rte mb-40')
+        content_of_article = soup.find('div', class_='entry-content')
         
         try:
-            tags = ' | '.join([e.text for e in soup.find('div', class_='tags mb-30').find_all('a')])
+            tags = ' | '.join([e.text for e in soup.find_all('a', {'rel': 'tag'})])
         except AttributeError:
             tags = None
         
-        author = [e.find('strong').text for e in content_of_article.find_all('p') if e.find('strong')]
-
-        author = None
+        author = soup.find('strong', {'style': 'font-size: 1rem;'})
+        if author:
+            author = author.text
+        else: author = None
         
-        text_of_article = '\n'.join([e.text.strip().replace('\n', '') for e in content_of_article])
+        text_of_article = '\n'.join([e.text.strip().replace('\n', '') for e in content_of_article]).strip()
         
-        title_of_article = soup.find('h2', class_='h4 font-fira bold')
+        title_of_article = soup.find('h1', class_='entry-title')
         
-        if not title_of_article:
-            title_of_article = soup.find('h2', class_='title h4 font-yesevaone')
-     
         if title_of_article:
             title_of_article = title_of_article.text.strip()     
         else:
             title_of_article = None
     
         try:
-            external_links = ' | '.join(set([el['href'] for sub in [e.find_all('a') for e in content_of_article.find_all('p')] for el in sub if 'instytutksiazki' not in el['href']]))
+            external_links = ' | '.join(set([el['href'] for sub in [e.find_all('a') for e in content_of_article.find_all('p')] for el in sub if 'prowincja' not in el['href']]))
         except KeyError:
             external_links = None
             
@@ -100,16 +98,16 @@ article_links = get_links('https://prowincja.art.pl/category/literatura/')
 all_results = []
 errors = []
 with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(dictionary_of_article, article_links_total),total=len(article_links_total)))   
+    list(tqdm(excecutor.map(dictionary_of_article, article_links),total=len(article_links)))   
 
-with open(f'data/instytutksiazki_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/prowincja_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False, default=str)        
 
 df = pd.DataFrame(all_results)
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
 
-with pd.ExcelWriter(f"data/instytutksiazki_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
+with pd.ExcelWriter(f"data/prowincja_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
     df.to_excel(writer, 'Posts', index=False)
 
 #%%Uploading files on Google Drive
@@ -117,7 +115,7 @@ with pd.ExcelWriter(f"data/instytutksiazki_{datetime.today().date()}.xlsx", engi
 gauth = GoogleAuth()           
 drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"data/instytutksiazki_{datetime.today().date()}.xlsx", f'data/instytutksiazki_{datetime.today().date()}.json']
+upload_file_list = [f"data/prowincja_{datetime.today().date()}.xlsx", f'data/prowincja_{datetime.today().date()}.json']
 for upload_file in upload_file_list:
 	gfile = drive.CreateFile({'title': upload_file.replace('data/', ''), 'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})
 	gfile.SetContentFile(upload_file)
