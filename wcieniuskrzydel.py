@@ -10,6 +10,7 @@ from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
+from functions import date_change_format_long
 
 #%% def
 def get_sitemap_links(sitemap):
@@ -25,7 +26,6 @@ def get_articles_links(sitemap_page_link):
     articles_links.extend(links)
 
 def dictionary_of_article(article_link):
-    # article_link = 'https://wcieniuskrzydel.blogspot.com/2024/04/ukojenie.html'
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
@@ -41,14 +41,12 @@ def dictionary_of_article(article_link):
     except AttributeError:
         title_of_article = None
         
-    date_of_publication = soup.find('h2', class_='date-header').text
-    
-    date_of_publication = re.findall(r'(?<=, ).*', date_of_publication)[0]
-    
+  
+    date_of_publication = date_change_format_long(soup.find('h2', class_='date-header').text)
      
     article = soup.find('div', class_='post-body entry-content')
     text_of_article = article.text.strip()
-
+   
         
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|wcieniuskrzydel', x)])
@@ -66,16 +64,14 @@ def dictionary_of_article(article_link):
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
+                             'Inni autorzy':  True if "©" in text_of_article else False,
                              'Linki zewnętrzne': False if external_links == '' else external_links,
-                             'Zdjęcia/Grafika': True if [x['src'] for x in article.find_all('img')] else False,
+                             'Zdjęcia/Grafika': True if photos_links != None else False,
                              'Linki do zdjęć': photos_links
                              }
             
     all_results.append(dictionary_of_article)
 
-
-
-#Do dokończenia format daty i sprawdzenie calosci
 # Pojawiaja sie wiersze wewnatrz tekstow, ktorych autorem jest ktos inny np. tutaj: https://wcieniuskrzydel.blogspot.com/2013/06/dzisiaj-o-2030-wernisaz-online-ksztaty.html
 
 
