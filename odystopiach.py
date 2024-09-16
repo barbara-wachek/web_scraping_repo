@@ -38,8 +38,31 @@ def dictionary_of_article(article_link):
     # options.add_argument('--headless')
     # driver = webdriver.Chrome(options=options)
     driver = webdriver.Chrome()
-    driver.get(article_link)
     driver.find_element(By.XPATH, "//*[@id='choiceList']/cr-radio-button[3]").click()
+    driver.get(article_link)
+    
+    
+    xpath = //*[@id="choiceList"]/cr-radio-button[7]
+    
+    xpath = //*[@id="choiceList"]/cr-radio-button/@aria-label="Google"
+
+    xpath = //*[text()="Google"]]    
+    
+    
+    
+    
+    
+    /html/body/search-engine-choice-app//div[1]/cr-radio-group/cr-radio-button[8]
+    
+    
+    
+    
+    
+    
+//*[@data-value='pl']
+    
+    
+    
     
     try:
         element = WebDriverWait(driver, 10).until(
