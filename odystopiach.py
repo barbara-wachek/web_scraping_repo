@@ -5,26 +5,20 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import regex as re
 import time
-from time import mktime
 from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
-from functions import date_change_format_long
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-
-
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
 #%% def
-
-#Artykuł pojawia się jako wyskakujacy element. Prawdopodobnie trzeba uzyc selenium
-
+#Duzo informacji do wyjecia o ksiazce np. tutaj https://odystopiach.blogspot.com/2023/10/program-pegasus-historia-upadku.html
 def get_sitemap_links(sitemap):
     html_text_sitemap = requests.get(sitemap).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
@@ -33,55 +27,23 @@ def get_sitemap_links(sitemap):
 
 def dictionary_of_article(article_link):
     article_link = 'https://odystopiach.blogspot.com/2024/01/inowrocawski-ratusz-z-pegasusem-w-tle.html'
+    article_link = 'https://odystopiach.blogspot.com/2023/10/piaty-krag-pieka.html'
+    article_link = 'https://odystopiach.blogspot.com/2023/10/program-pegasus-historia-upadku.html'
+    article_link = 'https://odystopiach.blogspot.com/2016/11/uniwersum-agiernika.html' #inne style w tekscie artykulu
     
-    # options = webdriver.ChromeOptions()
-    # options.add_argument('--headless')
-    # driver = webdriver.Chrome(options=options)
-    driver = webdriver.Chrome()
-    driver.find_element(By.XPATH, "//*[@id='choiceList']/cr-radio-button[3]").click()
+    options = webdriver.ChromeOptions()
+    #Poniższy wiersz kodu wyłącza wyskakujace okno z wyborem domyślnej przeglądarki!
+    options.add_argument("--disable-search-engine-choice-screen")
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(options=options)
     driver.get(article_link)
-    
-    
-    xpath = //*[@id="choiceList"]/cr-radio-button[7]
-    
-    xpath = //*[@id="choiceList"]/cr-radio-button/@aria-label="Google"
-
-    xpath = //*[text()="Google"]]    
-    
-    
-    
-    
-    
-    /html/body/search-engine-choice-app//div[1]/cr-radio-group/cr-radio-button[8]
-    
-    
-    
-    
-    
-    
-//*[@data-value='pl']
-    
-    
-    
-    
-    try:
-        element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "bottom ribbon-piece"))
-            )
-    finally:
-        driver.quit()    
+    #Poniższy kod czeka na pojawienie się sekcji o autorstwie (aż wczyta się wyskakujące okno)
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'publish-info')))
         
-        
-    #Zrobic tak, zeby poczekało az pokaze sie wybrany element strony
-    html_text = requests.get(article_link).text
-    while 'Error 503' in html_text:
-        time.sleep(2)
-        html_text = requests.get(article_link).text 
+    html_text = driver.page_source 
     soup = BeautifulSoup(html_text, 'html.parser')
-    
-    # author = soup.find('span', class_='post-author vcard').text.replace("\n", " ")
-    # author = re.findall(r'(?<=Autor: © ).*', author)[0]
-    
+     
+    author = soup.find('a', class_='url fn').text
     
     try:
         title_of_article = soup.find('h1', class_='title entry-title').text.strip()
@@ -89,12 +51,24 @@ def dictionary_of_article(article_link):
         title_of_article = None
         
   
-    date_of_publication = soup.find('abbr', class_='time published')
+    date_of_publication = soup.find('abbr', class_='time published')['title']
+    date_of_publication = re.findall(r'\d{4}-\d{2}-\d{2}', date_of_publication)[0]
      
-    article = soup.find('div', class_='post-body entry-content')
+    article = soup.find('div', class_='article-content entry-content')
     text_of_article = article.text.strip()
    
+    
+    # try:
+    #     title_of_book = re.findall(r'„.*”', title_of_article)[0]
+    # except IndexError:
+    #     title_of_book = None
         
+    # try:
+    #     author_of_book = re.sub(r'(autork?a?:)(.*)(\ntytuł oryginału:)', '\2', text_of_article)
+    # except IndexError:
+    #     author_of_book = None 
+    
+
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|wcieniuskrzydel', x)])
     except (AttributeError, KeyError, IndexError):
@@ -110,6 +84,8 @@ def dictionary_of_article(article_link):
                              'Data publikacji': date_of_publication,
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
+                             'Autor książki': author_of_book,
+                             'Tytuł oryginału książki': title_of_book,
                              'Tekst artykułu': text_of_article,
                              'Inni autorzy':  True if "©" in text_of_article else False,
                              'Linki zewnętrzne': False if external_links == '' else external_links,
@@ -123,7 +99,6 @@ def dictionary_of_article(article_link):
 
 
 #%% main
-
 articles_links = get_sitemap_links('https://odystopiach.blogspot.com/sitemap.xml')    
    
 all_results = []
