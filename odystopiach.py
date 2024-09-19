@@ -18,7 +18,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 #%% def
-#Duzo informacji do wyjecia o ksiazce np. tutaj https://odystopiach.blogspot.com/2023/10/program-pegasus-historia-upadku.html
+
 def get_sitemap_links(sitemap):
     html_text_sitemap = requests.get(sitemap).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
@@ -26,10 +26,25 @@ def get_sitemap_links(sitemap):
     return links
 
 def dictionary_of_article(article_link):
-    article_link = 'https://odystopiach.blogspot.com/2024/01/inowrocawski-ratusz-z-pegasusem-w-tle.html'
-    article_link = 'https://odystopiach.blogspot.com/2023/10/piaty-krag-pieka.html'
-    article_link = 'https://odystopiach.blogspot.com/2023/10/program-pegasus-historia-upadku.html'
-    article_link = 'https://odystopiach.blogspot.com/2016/11/uniwersum-agiernika.html' #inne style w tekscie artykulu
+    # article_link = 'https://odystopiach.blogspot.com/2024/01/inowrocawski-ratusz-z-pegasusem-w-tle.html'
+    # article_link = 'https://odystopiach.blogspot.com/2023/10/piaty-krag-pieka.html'
+    # article_link = 'https://odystopiach.blogspot.com/2023/10/program-pegasus-historia-upadku.html'
+    # article_link = 'https://odystopiach.blogspot.com/2016/11/uniwersum-agiernika.html' #inne style w tekscie artykulu
+    # article_link = 'https://odystopiach.blogspot.com/2022/03/kosmiczny-wyrzut-sumienia.html' #brak ISBN
+    # article_link = 'https://odystopiach.blogspot.com/2016/11/bez-gebokosci.html' #bez tyt. oryginału
+    # article_link = 'https://odystopiach.blogspot.com/2011/11/biochemia-przerazenia.html' #tytuł
+    # article_link = 'https://odystopiach.blogspot.com/2017/03/wycieczka-pana-brouczka-na-ksiezyc.html' #tekst innego autora! 
+    # article_link = 'https://odystopiach.blogspot.com/2022/03/anarchistyczne-zaswiaty-rownolege.html'
+    # article_link = 'https://odystopiach.blogspot.com/2022/08/nic-sie-nie-dzieje-wszyscy-sie-nudza.html'
+    # article_link = 'https://odystopiach.blogspot.com/2017/10/gdy-rozum-spi-bola-mnie-zeby.html'
+    # article_link = 'https://odystopiach.blogspot.com/2011/09/metoda-patchworku.html' #autorka
+    # article_link = 'https://odystopiach.blogspot.com/2016/01/jesli-nie-soma-to-co.html'
+    # article_link = 'https://odystopiach.blogspot.com/2013/11/powiesc-niewyrazna.html'
+    # article_link = 'https://odystopiach.blogspot.com/2022/08/nic-sie-nie-dzieje-wszyscy-sie-nudza.html'
+    # article_link = 'https://odystopiach.blogspot.com/2023/02/przechytrzyc-chaos.html' #ISBN z X na koncu
+    article_link = 'https://odystopiach.blogspot.com/2016/01/wycinanie-swiata.html'
+    
+    
     
     options = webdriver.ChromeOptions()
     #Poniższy wiersz kodu wyłącza wyskakujace okno z wyborem domyślnej przeglądarki!
@@ -57,18 +72,68 @@ def dictionary_of_article(article_link):
     article = soup.find('div', class_='article-content entry-content')
     text_of_article = article.text.strip()
    
-    
-    # try:
-    #     title_of_book = re.findall(r'„.*”', title_of_article)[0]
-    # except IndexError:
-    #     title_of_book = None
         
-    # try:
-    #     author_of_book = re.sub(r'(autork?a?:)(.*)(\ntytuł oryginału:)', '\2', text_of_article)
-    # except IndexError:
-    #     author_of_book = None 
-    
+    try:
+        author_of_book = re.findall(r'(?<=autorz?y?k?a?:\s).*(?=\n*tytuł.*)', text_of_article)[0].strip()
+    except IndexError:
+        author_of_book = None 
 
+            
+    try:
+        title_of_original_book = re.findall(r'(?<=tytuł oryginału:)\s?.*\n?\n?(?=przekład.*)', text_of_article)[0].strip()
+    except IndexError:
+        title_of_original_book = None
+        
+    try:
+        title_of_book = re.findall(r'(?<=tytuł:)\s?.*\n?(?=\n*.*)', text_of_article)[0].strip()
+    except IndexError:
+        title_of_book = None
+       
+    try:
+        translator = re.findall(r'(?<=przekład:)\s?.*\n?(?=\n*wydawnictwo.*)', text_of_article)[0].strip()
+    except IndexError:
+        translator = None
+       
+    try:
+        publish_year = re.findall(r'(?<=rok wydania:)\s?\d{4}\n?(?=.*)', text_of_article)[0].strip()
+    except IndexError:
+        publish_year = None
+        
+    try:
+        ISBN = re.findall(r'(?<=ISBN:)\s?\d{3}-?\d{2}-?\d{5}-?\d{2}-?\d{1}', text_of_article)[0].strip()
+    except IndexError:
+        ISBN = None
+        
+    if ISBN == None:
+        try:
+            ISBN = re.findall(r'(?<=ISBN:)\s?\d{3}-?\d{2}-?\d{4}-?\d{3}-?\d{1}', text_of_article)[0].strip()
+        except IndexError:
+            ISBN = None
+            
+    if ISBN == None:
+        try:
+            ISBN = re.findall(r'(?<=ISBN:)\s?\d{2}-?\d{3}-?\d{4}-?\d{1}', text_of_article)[0].strip()
+        except IndexError:
+            ISBN = None
+            
+            
+    if ISBN == None:
+        try:
+            ISBN = re.findall(r'(?<=ISBN:)\s?\d{2}-?\d{4}-?\d{3}-?.{1}', text_of_article)[0].strip()
+        except IndexError:
+            ISBN = None
+
+
+    try:
+        publisher = re.findall(r'(?<=wydawnictwo:)\s?.*\n?(?=\n*ISBN.*)', text_of_article)[0].strip()
+    except IndexError:
+        publisher = None
+        
+    try:
+        tags = " | ".join([x.text for x in soup.find_all('a', class_='label')])
+    except IndexError:
+        tags = None
+    
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|wcieniuskrzydel', x)])
     except (AttributeError, KeyError, IndexError):
@@ -79,15 +144,26 @@ def dictionary_of_article(article_link):
     except (AttributeError, KeyError, IndexError):
         photos_links = None
     
+    try:
+        source = re.search(r'źródło:', text_of_article)[0]
+    except:
+        source = None
+    
     
     dictionary_of_article = {'Link': article_link,
                              'Data publikacji': date_of_publication,
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
+                             'Tagi': tags,
                              'Autor książki': author_of_book,
-                             'Tytuł oryginału książki': title_of_book,
+                             'Tytuł książki': title_of_book,
+                             'Tytuł oryginału książki': title_of_original_book,
+                             'Autor przekładu': translator,
+                             'Rok wydania': publish_year,
+                             'Wydawnictwo': publisher,
+                             'ISBN': ISBN,
+                             'Uwagi': 'Uwaga! Możliwy "przedruk"' if source != None else None,
                              'Tekst artykułu': text_of_article,
-                             'Inni autorzy':  True if "©" in text_of_article else False,
                              'Linki zewnętrzne': False if external_links == '' else external_links,
                              'Zdjęcia/Grafika': True if photos_links != None else False,
                              'Linki do zdjęć': photos_links
@@ -95,14 +171,17 @@ def dictionary_of_article(article_link):
             
     all_results.append(dictionary_of_article)
 
-# Pojawiaja sie wiersze wewnatrz tekstow, ktorych autorem jest ktos inny np. tutaj: https://wcieniuskrzydel.blogspot.com/2013/06/dzisiaj-o-2030-wernisaz-online-ksztaty.html
-
-
 #%% main
 articles_links = get_sitemap_links('https://odystopiach.blogspot.com/sitemap.xml')    
    
+
+#bez wielowątkowości zajmuje około 40 minut. Z wielowątkowoscią wysypuje sie w trakcie
+# all_results = []
+# list(tqdm(map(dictionary_of_article, articles_links),total=len(articles_links)))
+
+
 all_results = []
-with ThreadPoolExecutor() as excecutor:
+with ThreadPoolExecutor(max_workers=3) as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
     
