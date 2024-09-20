@@ -4,7 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import regex as re
-import time
 from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -71,7 +70,6 @@ def dictionary_of_article(article_link):
         title_of_article = soup.find('h1', class_='title entry-title').text.strip()
     except AttributeError:
         title_of_article = None
-        
   
     date_of_publication = soup.find('abbr', class_='time published')['title']
     date_of_publication = re.findall(r'\d{4}-\d{2}-\d{2}', date_of_publication)[0]
@@ -79,13 +77,11 @@ def dictionary_of_article(article_link):
     article = soup.find('div', class_='article-content entry-content')
     text_of_article = article.text.strip()
    
-        
     try:
         author_of_book = re.findall(r'(?<=autorz?y?k?a?:\s).*(?=\n*tytuł.*)', text_of_article)[0].strip()
     except IndexError:
         author_of_book = None 
 
-            
     try:
         title_of_original_book = re.findall(r'(?<=tytuł oryginału:)\s?.*\n?\n?(?=przekład.*)', text_of_article)[0].strip()
     except IndexError:
@@ -111,36 +107,6 @@ def dictionary_of_article(article_link):
         publish_year = re.findall(r'(?<=rok wydania:)\s?\d{4}\n?(?=.*)', text_of_article)[0].strip()
     except IndexError:
         publish_year = None
-        
-    # try:
-    #     ISBN = re.findall(r'(?<=ISBN:)\s?\d{3}-?\d{2}-?\d{5}-?\d{2}-?\d{1}', text_of_article)[0].strip()
-    # except IndexError:
-    #     ISBN = None
-        
-    # if ISBN == None:
-    #     try:
-    #         ISBN = re.findall(r'(?<=ISBN:)\s?\s?\d{3}-?\d{2}-?\d{4}-?\d{3}-?\d{1}', text_of_article)[0].strip()
-    #     except IndexError:
-    #         ISBN = None
-            
-    # if ISBN == None:
-    #     try:
-    #         ISBN = re.findall(r'(?<=ISBN:)\s?\s?\d{2}-?\d{3}-?\d{4}-?\d{1}', text_of_article)[0].strip()
-    #     except IndexError:
-    #         ISBN = None
-            
-            
-    # if ISBN == None:
-    #     try:
-    #         ISBN = re.findall(r'(?<=ISBN:)\s?\d{2}-?\d{4}-?\d{3}-?.{1}', text_of_article)[0].strip()
-    #     except IndexError:
-    #         ISBN = None
-
-    # if ISBN == None:
-    #     try: 
-    #         ISBN = re.findall(r'(?<=ISBN:)[\s\d\-]*(?=rok)', text_of_article)[0].strip()
-    #     except IndexError:
-    #         ISBN = None
             
     try: 
         ISBN = re.findall(r'(?<=ISBN:)[\s\d\-]*.?(?=rok)', text_of_article)[0].strip()
@@ -153,8 +119,6 @@ def dictionary_of_article(article_link):
         except IndexError:
             ISBN = None
              
-        
-            
     try:
         publisher = re.findall(r'(?<=wydawnictwo:)\s?.*\n?(?=\n*ISBN.*)', text_of_article)[0].strip()
     except IndexError:
@@ -210,12 +174,6 @@ def dictionary_of_article(article_link):
 
 #%% main
 articles_links = get_sitemap_links('https://odystopiach.blogspot.com/sitemap.xml')    
-   
-
-#bez wielowątkowości zajmuje około 40 minut. Z wielowątkowoscią wysypuje sie w trakcie
-# all_results = []
-# list(tqdm(map(dictionary_of_article, articles_links),total=len(articles_links)))
-
 
 all_results = []
 with ThreadPoolExecutor(max_workers=3) as excecutor:
