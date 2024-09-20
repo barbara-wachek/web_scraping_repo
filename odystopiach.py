@@ -18,7 +18,6 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 #%% def
-
 def get_sitemap_links(sitemap):
     html_text_sitemap = requests.get(sitemap).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
@@ -42,8 +41,16 @@ def dictionary_of_article(article_link):
     # article_link = 'https://odystopiach.blogspot.com/2013/11/powiesc-niewyrazna.html'
     # article_link = 'https://odystopiach.blogspot.com/2022/08/nic-sie-nie-dzieje-wszyscy-sie-nudza.html'
     # article_link = 'https://odystopiach.blogspot.com/2023/02/przechytrzyc-chaos.html' #ISBN z X na koncu
-    article_link = 'https://odystopiach.blogspot.com/2016/01/wycinanie-swiata.html'
-    
+    # article_link = 'https://odystopiach.blogspot.com/2016/01/wycinanie-swiata.html'
+    # # article_link = 'https://odystopiach.blogspot.com/2020/04/stolica-wykolejencow.html'
+    # # article_link = 'https://odystopiach.blogspot.com/2023/10/modelowy-odbiorca-nie-istnieje.html'
+    # # article_link = 'https://odystopiach.blogspot.com/2023/10/modelowy-odbiorca-nie-istnieje.html'
+    # # article_link = 'https://odystopiach.blogspot.com/2011/02/komedia-i-antyutopijny-sztafaz.html'
+    # # article_link = 'https://odystopiach.blogspot.com/2024/01/problemy-cyfrowych-tubylczyn-i-tubylcow.html'
+    # article_link = 'https://odystopiach.blogspot.com/2013/09/fabryka-faszow-i-przekrecania-mozgow.html'
+    # article_link = 'https://odystopiach.blogspot.com/2023/02/opusci-mezczyzna-swoja-matke-i-poaczy.html'
+    # article_link = 'https://odystopiach.blogspot.com/2015/09/technoremedium.html'
+    # article_link = 'https://odystopiach.blogspot.com/2023/05/zonierz-i-niepanna.html'
     
     
     options = webdriver.ChromeOptions()
@@ -88,6 +95,12 @@ def dictionary_of_article(article_link):
         title_of_book = re.findall(r'(?<=tytuł:)\s?.*\n?(?=\n*.*)', text_of_article)[0].strip()
     except IndexError:
         title_of_book = None
+        
+    if title_of_book == None:
+        try:
+            title_of_book = "Dotyczy dzieła: " + [x.text for x in article.find_all('b') if x.text.startswith('o ')][0]
+        except (AttributeError, IndexError):
+            title_of_book = None
        
     try:
         translator = re.findall(r'(?<=przekład:)\s?.*\n?(?=\n*wydawnictwo.*)', text_of_article)[0].strip()
@@ -99,31 +112,49 @@ def dictionary_of_article(article_link):
     except IndexError:
         publish_year = None
         
-    try:
-        ISBN = re.findall(r'(?<=ISBN:)\s?\d{3}-?\d{2}-?\d{5}-?\d{2}-?\d{1}', text_of_article)[0].strip()
+    # try:
+    #     ISBN = re.findall(r'(?<=ISBN:)\s?\d{3}-?\d{2}-?\d{5}-?\d{2}-?\d{1}', text_of_article)[0].strip()
+    # except IndexError:
+    #     ISBN = None
+        
+    # if ISBN == None:
+    #     try:
+    #         ISBN = re.findall(r'(?<=ISBN:)\s?\s?\d{3}-?\d{2}-?\d{4}-?\d{3}-?\d{1}', text_of_article)[0].strip()
+    #     except IndexError:
+    #         ISBN = None
+            
+    # if ISBN == None:
+    #     try:
+    #         ISBN = re.findall(r'(?<=ISBN:)\s?\s?\d{2}-?\d{3}-?\d{4}-?\d{1}', text_of_article)[0].strip()
+    #     except IndexError:
+    #         ISBN = None
+            
+            
+    # if ISBN == None:
+    #     try:
+    #         ISBN = re.findall(r'(?<=ISBN:)\s?\d{2}-?\d{4}-?\d{3}-?.{1}', text_of_article)[0].strip()
+    #     except IndexError:
+    #         ISBN = None
+
+    # if ISBN == None:
+    #     try: 
+    #         ISBN = re.findall(r'(?<=ISBN:)[\s\d\-]*(?=rok)', text_of_article)[0].strip()
+    #     except IndexError:
+    #         ISBN = None
+            
+    try: 
+        ISBN = re.findall(r'(?<=ISBN:)[\s\d\-]*.?(?=rok)', text_of_article)[0].strip()
     except IndexError:
         ISBN = None
+    
+    if ISBN == None:
+        try: 
+            ISBN = re.findall(r'(?<=ISBN:)[\s\d\-]*.?(?=liczba)', text_of_article)[0].strip()
+        except IndexError:
+            ISBN = None
+             
         
-    if ISBN == None:
-        try:
-            ISBN = re.findall(r'(?<=ISBN:)\s?\d{3}-?\d{2}-?\d{4}-?\d{3}-?\d{1}', text_of_article)[0].strip()
-        except IndexError:
-            ISBN = None
             
-    if ISBN == None:
-        try:
-            ISBN = re.findall(r'(?<=ISBN:)\s?\d{2}-?\d{3}-?\d{4}-?\d{1}', text_of_article)[0].strip()
-        except IndexError:
-            ISBN = None
-            
-            
-    if ISBN == None:
-        try:
-            ISBN = re.findall(r'(?<=ISBN:)\s?\d{2}-?\d{4}-?\d{3}-?.{1}', text_of_article)[0].strip()
-        except IndexError:
-            ISBN = None
-
-
     try:
         publisher = re.findall(r'(?<=wydawnictwo:)\s?.*\n?(?=\n*ISBN.*)', text_of_article)[0].strip()
     except IndexError:
@@ -146,9 +177,15 @@ def dictionary_of_article(article_link):
     
     try:
         source = re.search(r'źródło:', text_of_article)[0]
-    except:
+    except TypeError:
         source = None
     
+    if source == None:
+        try: 
+            source = re.search('Artykuł opublikowany pierwotnie', text_of_article)[0]
+        except TypeError:
+            source = None
+        
     
     dictionary_of_article = {'Link': article_link,
                              'Data publikacji': date_of_publication,
@@ -192,7 +229,15 @@ with open(f'data\\odystopiach_{datetime.today().date()}.json', 'w', encoding='ut
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
-      
+   
+# df['Tytuł książki'].notnull().sum() #153
+# df['Autor książki'].notnull().sum() #107
+# df['Tytuł książki'].str.contains(r'Dotyczy dzieła: .*').sum() #109
+# df['ISBN'].notnull().sum()  #79 #118 po dodaniu jednego if #107 #119
+# df['Wydawnictwo'].notnull().sum() #125
+# df['Tekst artykułu'].notnull().sum()
+
+
 with pd.ExcelWriter(f"data\\odystopiach_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
     writer.save()     
