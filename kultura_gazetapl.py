@@ -10,13 +10,6 @@ from datetime import datetime
 import json
 import time
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-
 #%% def
 def get_category_links(home_page):
     html_text = requests.get(home_page).text
