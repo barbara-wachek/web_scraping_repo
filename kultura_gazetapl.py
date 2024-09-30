@@ -41,6 +41,7 @@ def dictionary_of_article(article_link):
     # article_link = 'https://kultura.gazeta.pl/kultura/7,127222,31321567,marta-piasecka-nowa-prowadzaca-wiadomosci-w-wpolsce24.html'
     # article_link = 'https://kultura.gazeta.pl/kultura/7,127222,31317522,w-nowych-odcinkach-m-jak-milosc-bedzie-sie-dzialo-do-obsady.html'
     # article_link = 'https://kultura.gazeta.pl/kultura/7,114528,31320808,j-k-rowling-nie-osiada-na-laurach-autorka-harry-ego-pottera.html'
+    # article_link = 'https://kultura.gazeta.pl/kultura/7,114438,31109497,do-coming-outu-sprowokowal-go-kaczynski-raczek-wyznaje-najgorszy.html'
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
@@ -48,22 +49,49 @@ def dictionary_of_article(article_link):
         html_text = requests.get(article_link).text 
     soup = BeautifulSoup(html_text, 'html.parser')
     
-    author = soup.find('span', class_='article_author').text.strip()
-    date_of_publication = soup.find('span', class_='article_date').time['datetime']
-    date_of_publication = re.findall(r'\d{4}-\d{2}-\d{2}', date_of_publication)[0]
-    title_of_article = soup.find('h1', {'id':'article_title'}).text.strip()
+    try:
+        author = soup.find('span', class_='article_author').text.strip()
+    except AttributeError:
+        author = None
+        
+    try:   
+        date_of_publication = soup.find('span', class_='article_date').time['datetime']
+        date_of_publication = re.findall(r'\d{4}-\d{2}-\d{2}', date_of_publication)[0]
+    except AttributeError:
+        date_of_publication = None
+    
+    try:    
+        title_of_article = soup.find('h1', {'id':'article_title'}).text.strip()
+    except AttributeError:
+        title_of_article = None        
     
     # article_section = [e.text.strip() for e in soup.find_all('div', class_='bottom_section')] #Tu pobierał się cały tekst w tym reklamy
     
     #Do porownania z innymi linkami czy cala zawartosc artykulu jest pobrana. Moze jakies inne elementy pojawia sie w innych przykladach
+    try:
+        lead_section = [e.text for e in soup.find_all('div', {'id': 'gazeta_article_lead'})]
+    except AttributeError:
+        lead_section = NoneType
+        
+    try:    
+        article = [e.text.strip() for e in soup.find_all(re.compile('p|h2|blockquote'), class_= re.compile('art_paragraph|art_sub_title|art_blockquote'))] 
+    except AttributeError:
+        article = None
     
-    lead_section = [e.text for e in soup.find_all('div', {'id': 'gazeta_article_lead'})]
-    article = [e.text.strip() for e in soup.find_all(re.compile('p|h2|blockquote'), class_= re.compile('art_paragraph|art_sub_title|art_blockquote'))] 
-    
-    text_of_article = "\n".join(lead_section + article)
-    tags = " | ".join([e.text.strip() for e in soup.find_all('li', class_='tags_item')])
+    try:
+        text_of_article = "\n".join(lead_section + article)
+    except: 
+        text_of_article = None
+     
+    try:    
+        tags = " | ".join([e.text.strip() for e in soup.find_all('li', class_='tags_item')])
+    except AttributeError: 
+        tags = None
 
-    category = soup.find('a', class_='nav__itemName nav__active').text
+    try:
+        category = soup.find('a', class_='nav__itemName nav__active').text
+    except AttributeError:
+        category = None
    
     dictionary_of_article = {'Link': article_link,
                              'Data publikacji': date_of_publication,
@@ -77,37 +105,26 @@ def dictionary_of_article(article_link):
     all_results.append(dictionary_of_article)
 
 #%% main
-# 'https://gazeta.pl/robots.txt' - Zabranianie rozpowszechniania i kopiowania treści. 
-#  https://kultura.gazeta.pl/robots.txt
-
-
 dictionary_of_category_links = get_category_links('https://kultura.gazeta.pl/kultura/0,0.html')    
 category_links = [v for k,v in dictionary_of_category_links.items()]
 
-
 articles_links = []
-get_articles_links(category_links[0]) #Wiadomości (około 27 421)
-get_articles_links(category_links[1]) #Filmy (około 9 537)
-get_articles_links(category_links[2]) #Muzyka (około 5149)
-get_articles_links(category_links[3]) #Książki (około 1927)
-get_articles_links(category_links[4]) #TV i Seriale (około 7 514)
-get_articles_links(category_links[5]) #Sztuka (około 681)
-get_articles_links(category_links[6]) #Festiwale (około 175)
-get_articles_links(category_links[7]) #Quizy (około 2410)
+# list(tqdm(map(get_articles_links, category_links),total=len(articles_links))) #Do zeskrobania wszystkich linków
+#Wynik: ponad 55 tysiecy linków (ale z duplikatami)
+
+# get_articles_links(category_links[0]) #Wiadomości (około 27 421)
+# get_articles_links(category_links[1]) #Filmy (około 9 537)
+# get_articles_links(category_links[2]) #Muzyka (około 5149)
+# get_articles_links(category_links[3]) #Książki (około 1927)
+# get_articles_links(category_links[4]) #TV i Seriale (około 7 514)
+# get_articles_links(category_links[5]) #Sztuka (około 681)
+# get_articles_links(category_links[6]) #Festiwale (około 175)
+# get_articles_links(category_links[7]) #Quizy (około 2410)
 
 
-#Wszystkie artykuły: 54 814
+#Odrzucić duplikaty (niektore linki mogą mieć kilka kategorii, wiec znajdowały się w kilku zbiorach). Różnica około 26 tysiecy
+
 articles_links = list(dict.fromkeys(articles_links))
-
-# articles_links_without_duplicates = list(dict.fromkeys(articles_links))
-
-
-#Wszystkie artykuły bez duplikatów: 29 701 (niektóre najwyraźniej miały kilka kategorii)
-
-# list(tqdm(map(get_articles_links, category_links),total=len(category_links)))
-
-# with ThreadPoolExecutor() as excecutor:
-#     list(tqdm(excecutor.map(get_articles_links, category_links),total=len(category_links)))
 
 
 all_results = []
@@ -123,6 +140,9 @@ df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
    
+# df['Autor'].notna()
+
+#Jeżeli przy jakimś rekordzie nie udalo sie pobrać daty, to albo link jest już nieaktywny, albo są to jakieś quizy lub materiały promocyjne. Najlepiej wyrzucić na etapie DF, żeby już nikt tego nie analizował niepotrzebnie. 
 
 
 with pd.ExcelWriter(f"data\\kultura_gazetapl_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
