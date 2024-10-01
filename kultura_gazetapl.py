@@ -105,6 +105,9 @@ def dictionary_of_article(article_link):
     all_results.append(dictionary_of_article)
 
 #%% main
+
+#Wywala kod na 22699 zapisie (błąd HTTP cos tam. Do zbadania). Czy w ogole pobierać kategorię quizy? itp.?
+
 dictionary_of_category_links = get_category_links('https://kultura.gazeta.pl/kultura/0,0.html')    
 category_links = [v for k,v in dictionary_of_category_links.items()]
 
