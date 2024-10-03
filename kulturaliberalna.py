@@ -14,51 +14,38 @@ from functions import date_change_format_short
 #%% def
 
 def number_of_current_issue(link):
-    # link = 'https://kulturaliberalna.pl/kategoria/temat-tygodnia/'
-    
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     number = soup.find('a', class_='h2').text.strip()
     number = re.search(r'(?<=Nr\s)\d\d?\d?', number).group(0)
+    
     return number
+
 
 def get_links_of_issues(current_number):
     format_link = 'https://kulturaliberalna.pl/tag/nr-'
     for x in tqdm(range(1, int(current_number)+1)):
         issue_link = format_link + str(x)
         issues_pages_links.append(issue_link)
-        # html_text = requests.get(issue_link).text
-        # soup = BeautifulSoup(html_text, 'lxml')
-        # issue_data = soup.find('div', class_='title').text
-
-        # dictionary_of_issue = {'Link do numeru': issue_link,
-        #                        'Numer': issue_data
-        #                        }
-            
-        # issues_pages_links.append(dictionary_of_issue)
-            
+        
     return issues_pages_links
         
 
-
 def get_articles_links(issue_link):
-    # issue_link = 'https://kulturaliberalna.pl/tag/nr-4/'
-   
     html_text = requests.get(issue_link).text
     soup = BeautifulSoup(html_text, 'lxml')
-    
     issue_links = [x['href'] for x in soup.find_all('a', class_='h5')]
     articles_links.extend(issue_links)
 
     return articles_links
 
 
-
 def dictionary_of_article(article_link):
     # article_link = 'https://kulturaliberalna.pl/2009/01/19/kto-jest-dzis-nazista/'
     # article_link = 'https://kulturaliberalna.pl/2010/05/04/laskowski-slowo-jest-na-koncu-bobby-mcferrin-%e2%80%9evocabularies%e2%80%9d/'
-    # article_link = 'https://kulturaliberalna.pl/2011/03/22/spiss-zza-sciany/'
+    article_link = 'https://kulturaliberalna.pl/2011/03/22/spiss-zza-sciany/'
     # article_link = 'https://kulturaliberalna.pl/2024/10/01/filip-rudnik-recenzja-litwa-po-litewsku-dominik-wilczewski/'
+    # article_link = 'https://kulturaliberalna.pl/2022/04/14/widok-z-k2-dlaczego-propaganda-putina-dziala/'
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
@@ -102,7 +89,14 @@ def dictionary_of_article(article_link):
         title_of_article = None        
     
     
-    article = soup.find('article', class_='post-content')
+    article = soup.find('article', class_='post-type-post')
+    
+    # article = soup.find('article', class_='post-content')
+    # if article == None: 
+    #     try:
+    #         article = soup.find('div', class_='post-content')
+    #     except AttributeError:
+    #         article= None
     
     try:
         lead_section = " ".join([x.text.strip() for x in soup.find_all('p', class_='lead')])
@@ -118,9 +112,15 @@ def dictionary_of_article(article_link):
         
         
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'kulturaliberlna', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'kulturaliberalna', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
+        
+    if external_links == None or external_links == '':
+        try: 
+            external_links = ' | '.join([x for x in [x['src'] for x in article.find_all('iframe')] if not re.findall(r'kulturaliberalna', x)])
+        except AttributeError:
+            external_links = None
          
     try: 
         photos_links = ' | '.join([x['src'] for x in article.find_all('img')])  
@@ -135,9 +135,9 @@ def dictionary_of_article(article_link):
                              'Tytuł artykułu': title_of_article,
                              'Kategoria': category,
                              'Tekst artykułu': text_of_article,
-                             'Linki zewnętrzne': False if external_links == '' else external_links,
+                             'Linki zewnętrzne': False if external_links == '' or external_links == None else external_links,
                              'Zdjęcia/Grafika': True if photos_links != None else False,
-                             'Linki do zdjęć': photos_links
+                             'Linki do zdjęć': False if photos_links == '' e
                              }
             
     all_results.append(dictionary_of_article)
@@ -145,8 +145,6 @@ def dictionary_of_article(article_link):
 #%% main
 
 #popraw funkcję dictionary... zeby pokazywalo, jesli artykul ma link do youtube np. ten https://kulturaliberalna.pl/2022/04/14/widok-z-k2-dlaczego-propaganda-putina-dziala/
-
-#format_link = 'https://kulturaliberalna.pl/tag/nr-815/'
 
 current_number = number_of_current_issue('https://kulturaliberalna.pl/kategoria/temat-tygodnia/') #821
 
