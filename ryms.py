@@ -43,6 +43,9 @@ def get_articles_links_from_category_pages(link):
 
 
 #Problemy: jak wyciągnąć imię i nazwisko autora. Często nie ma tego przy artykule. Czasami jest w tekcie na koncu. Nie wyciągam wcale, bo za duzo jest wtedy bledów. 
+# Wyciągnij tytułu ksiażek z kategorii recenzja
+# Czy ta strona nie powinna isc do opracowania manualnego? 
+
 
 
 def dictionary_of_article(article_link):
