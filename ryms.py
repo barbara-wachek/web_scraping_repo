@@ -12,9 +12,6 @@ import time
 
 
 #%% def
-
-
-
 def get_all_pages_links(category_link):
     format_link = 'page/'
     html_text = requests.get(category_link).text
@@ -55,6 +52,7 @@ def dictionary_of_article(article_link):
     # article_link = 'https://ryms.pl/nominacje-do-nagrody-conrada/' #autor na koncu w nawiacsie (ml)
     # article_link = 'https://ryms.pl/o-czechu-ktory-pokochal-wlochy/'
     # article_link = 'https://ryms.pl/wielka-podroz-dziadka-eustachego/'
+    # article_link = 'https://ryms.pl/zlotowlosa-i-trzy-niedzwiedzie/'
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
@@ -97,6 +95,17 @@ def dictionary_of_article(article_link):
     #     author = None
     
     try:
+        title_of_book = re.search(r'^„.*”', title_of_article).group(0)
+    except (AttributeError, TypeError):
+        title_of_book = None
+        
+    if title_of_book == None:
+        try:
+            title_of_book = re.findall(r'„(.*?)”', text_of_article)[0]
+        except (TypeError, IndexError):
+            title_of_book = None
+    
+    try:
         tags = " | ".join([x.text for x in soup.find('ul', class_='td-tags td-post-small-box clearfix').find_all('a')])
     except AttributeError:
         tags = None
@@ -119,6 +128,7 @@ def dictionary_of_article(article_link):
                              'Tytuł artykułu': title_of_article,
                              'Kategoria': category,
                              'Tagi': tags,
+                             'Tytuł książki': title_of_book,
                              'Tekst artykułu': text_of_article,
                              'Linki zewnętrzne': False if external_links == '' or external_links == None else external_links,
                              'Zdjęcia/Grafika': True if photos_links != None else False,
@@ -159,8 +169,9 @@ with ThreadPoolExecutor() as excecutor:
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
+df = df.dropna(subset=["Data publikacji"]) #Usunięcie dwóch linków bez daty (podstrony)
 
-    
+
 with open(f'data\\ryms_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)   
 
