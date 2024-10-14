@@ -10,24 +10,18 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 from functions import date_change_format_long
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+
 
 
 #%% def    
+#Czasami dostep jest niemozliwy. Nie wiem od czgeo to za
 
-#Problemy z sitemapą. Wyskakuje błąd: ConnectionError: ('Connection aborted.', ConnectionResetError(10054, 'Istniejące połączenie zostało gwałtownie zamknięte przez zdalnego hosta', None, 10054, None))
-
-def get_sitemap_links(sitemap_link):
-    sitemap_link = 'https://biblioteczka-apteczka.pl/sitemap_index.xml'
-#     headers = {
-#     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0",
-#     "Accept-Encoding": "*",
-#     "Connection": "keep-alive"
-# }
-    html_text = requests.get(sitemap_link).text
+def get_articles_links(posts_sitemap):
+    posts_sitemap = 'https://biblioteczka-apteczka.pl/post-sitemap.xml'
+    html_text = requests.get(posts_sitemap).text
     soup = BeautifulSoup(html_text, 'lxml')
     links = [e.a['href'] for e in soup.find_all('td')]
+    articles_links.append(links)
     return links
 
 # def get_articles_links(link):   
@@ -90,8 +84,13 @@ def get_sitemap_links(sitemap_link):
     
  
 #%% main
+sitemap_link = 'https://biblioteczka-apteczka.pl/sitemap_index.xml'
+
 sitemap_links = get_sitemap_links('https://biblioteczka-apteczka.pl/sitemap_index.xml')
 
+articles_links = []
+
+articles_links = get_articles_links('https://biblioteczka-apteczka.pl/sitemap_index.xml')
 
 
 
@@ -119,14 +118,6 @@ sitemap_links = get_sitemap_links('https://biblioteczka-apteczka.pl/sitemap_inde
 
 #%%Uploading files on Google Drive
 
-gauth = GoogleAuth()           
-drive = GoogleDrive(gauth)   
-      
-upload_file_list = [f"biblioteczkaapteczka_{datetime.today().date()}.xlsx", f'biblioteczkaapteczka_{datetime.today().date()}.json']
-for upload_file in upload_file_list:
-	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
-	gfile.SetContentFile(upload_file)
-	gfile.Upload()  
 
 
 
