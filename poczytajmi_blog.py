@@ -24,6 +24,15 @@ def dictionary_of_article(article_link):
     # article_link = 'https://poczytajmi.blog/2021/01/15/byla-raz-starsza-pani/'
     # article_link = 'https://poczytajmi.blog/2023/05/24/gra-o-spadek/'
     # article_link = 'https://poczytajmi.blog/2021/06/23/irenka-dziewczynka-z-wilna/'
+    # article_link = 'https://poczytajmi.blog/2020/03/21/trzynastka-na-karku/' #dwie książki w opisie książki
+    # article_link = 'https://poczytajmi.blog/2020/02/12/mali-bohaterowie/' #dwie książki
+    # article_link = 'https://poczytajmi.blog/2020/03/02/dopoki-niebo-nie-placze/' #kilku autorów jednej ksiazki
+    # article_link = 'https://poczytajmi.blog/2020/02/16/czarodzieje-wyobrazni-portrety-polskich-ilustratorow/'
+    # article_link = 'https://poczytajmi.blog/2020/03/18/dawca/'
+    # article_link = 'https://poczytajmi.blog/2019/11/20/dziecko-czarownicy-spadkobierczyni/'
+    # article_link = 'https://poczytajmi.blog/2020/01/02/mama-zniosla-jajko/' #DWIE KSIAZKI DWOCH ROZNYCH AUTORÓW
+
+
     
     
     html_text = requests.get(article_link).text
@@ -57,7 +66,6 @@ def dictionary_of_article(article_link):
     
     
     
-    
     try:
         article = soup.find('div', class_='entry-content')
     except AttributeError:
@@ -79,24 +87,43 @@ def dictionary_of_article(article_link):
         book_description = None  
         
 
+        
     try:   
-        author_of_book = re.search(r'.*(?=\„.*)', book_description).group(0).strip()
+        first_quotation_mark = re.search(r'\„', book_description).span()
+        author_of_book = book_description[:int(first_quotation_mark[0])].strip()
     except (AttributeError, KeyError, IndexError, TypeError):
         author_of_book = None  
         
+        
+    # try:    
+    #     title_of_book = re.search(r'\„.*\”', book_description).group(0)
+    # except (AttributeError, KeyError, IndexError, TypeError):
+    #     title_of_book = None   
+        
+    
     try:    
-        title_of_book = re.search(r'\„.*\”', book_description).group(0)
+        title_of_book = " | ".join([x.group(0) for x in re.finditer(r'\„[\p{L}\,\s\?\!\.]*\”', book_description)])
     except (AttributeError, KeyError, IndexError, TypeError):
         title_of_book = None   
         
         
+    if " | " in title_of_book:    #Jesli jest kilka tytułów książki tzn. ze mamy dwie pozycje, a wiec trzeba sprawdzic, czy nie nalezy dopisac kogos do autorów
+        if len([x.group(0) for x in re.finditer(author_of_book, book_description)]) < 2:   #Sprawdzenie, czy juz znaleziony autor sie powtarza w opisie. Jesli tak, to odpuszczamy dalsza analize, bo to najprawodopodniej dwie ksiazki (dwa tytuly) jednego autora
+            try:
+                first_book_year_span = [x for x in re.finditer(r'\d{4}', book_description)][0].span()[1]
+                end_of_author = [x for x in re.finditer(r'\„', book_description)][1].span()[0]
+                second_author = book_description[int(first_book_year_span):int(end_of_author)].strip()
+                author_of_book = author_of_book + " | " + second_author
+            except (AttributeError, KeyError, IndexError, TypeError):
+                author_of_book = None
+        
     try:
-        publisher = re.search(r'wyd\.\:\s.*\,', book_description).group(0).replace(',', '')
+        publisher = " | ".join(re.findall(r'wyd\.\:\s[\p{L}\s\-]*', book_description))
     except (AttributeError, KeyError, IndexError, TypeError):
         publisher = None
     
     try:
-        place_and_year = re.search(r'\p{L}*\s?-?\p{L}*\s\d{4}', book_description).group(0).strip()  
+        place_and_year = " | ".join([x.strip() for x in re.findall(r'\p{L}*\s?-?\p{L}*\s\d{4}', book_description)])
     except (AttributeError, KeyError, IndexError, TypeError):
         place_and_year = None
         
@@ -134,7 +161,6 @@ articles_links = []
 sitemap_link = get_articles_links('https://poczytajmi.blog/sitemap.xml')
 
 
-
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
@@ -143,7 +169,6 @@ with ThreadPoolExecutor() as excecutor:
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
-df = df.dropna(subset=["Data publikacji"]) #Usunięcie dwóch linków bez daty (podstrony)
 
 
 with open(f'data\\poczytami_blog_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
