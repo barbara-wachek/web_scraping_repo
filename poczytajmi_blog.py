@@ -9,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 import time
-from functions import date_change_format_long
 
 
 #%% def
@@ -21,9 +20,20 @@ def get_articles_links(sitemap_link):
     return articles_links
 
 
-
 def dictionary_of_article(article_link):
-    article_link = 'https://poczytajmi.blog/2021/01/15/byla-raz-starsza-pani/'
+    # article_link = 'https://poczytajmi.blog/2021/01/15/byla-raz-starsza-pani/'
+    # article_link = 'https://poczytajmi.blog/2023/05/24/gra-o-spadek/'
+    # article_link = 'https://poczytajmi.blog/2021/06/23/irenka-dziewczynka-z-wilna/'
+    # article_link = 'https://poczytajmi.blog/2020/03/21/trzynastka-na-karku/' #dwie książki w opisie książki
+    # article_link = 'https://poczytajmi.blog/2020/02/12/mali-bohaterowie/' #dwie książki
+    # article_link = 'https://poczytajmi.blog/2020/03/02/dopoki-niebo-nie-placze/' #kilku autorów jednej ksiazki
+    # article_link = 'https://poczytajmi.blog/2020/02/16/czarodzieje-wyobrazni-portrety-polskich-ilustratorow/'
+    # article_link = 'https://poczytajmi.blog/2020/03/18/dawca/'
+    # article_link = 'https://poczytajmi.blog/2019/11/20/dziecko-czarownicy-spadkobierczyni/'
+    # article_link = 'https://poczytajmi.blog/2020/01/02/mama-zniosla-jajko/' #DWIE KSIAZKI DWOCH ROZNYCH AUTORÓW
+
+
+    
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
@@ -32,85 +42,98 @@ def dictionary_of_article(article_link):
     soup = BeautifulSoup(html_text, 'lxml')
     
     try:
-        author = soup.find('span', {'itemprop': 'name'}).text
-        author = re.search(r'.*(?<=\/)', author).group(0).replace('/', '')
+        author = soup.find('a', class_='url fn n').text
     except(TypeError, AttributeError):
         author = None
         
     try:
-        title_of_article = soup.find('h3', class_='post-title entry-title').text.strip()
+        title_of_article = soup.find('h1', class_='entry-title').text.strip()
     except AttributeError:
         title_of_article = None
         
     
     try:
         date_of_publication = soup.find('time', class_='entry-date published')['datetime']
+        date_of_publication = re.search(r'\d{4}-\d{2}-\d{2}', date_of_publication).group(0)
+    except TypeError:
+        try:
+            date_of_publication = soup.find('time', class_="entry-date published updated")['datetime']
+            date_of_publication = re.search(r'\d{4}-\d{2}-\d{2}', date_of_publication).group(0)
+        except TypeError:
+            date_of_publication = None
     except AttributeError:
         date_of_publication = None
     
     
+    
     try:
-        article = soup.find('div', class_='post-body entry-content')
+        article = soup.find('div', class_='entry-content')
     except AttributeError:
         article = None
         
     try:    
-        text_of_article = " ".join([x.text.strip() for x in article.find_all('div', class_='MsoNormal')]).replace("\n", " ")
+        text_of_article = " ".join([x.text.strip() for x in article.find_all('p')])
     except AttributeError:
         text_of_article = None
-        
-    if text_of_article == None or text_of_article == "":
-        
-        try:    
-            text_of_article = article.text.replace("\n", "").strip()
-        except AttributeError:
-            text_of_article = None
     
     try:
-        book_description = [x.text for x in article.find_all('div', class_='MsoNormal') if x != " "]
-        book_description = [x.replace('\n', '').strip() for x in book_description if x != '\n']
-        # book_description = [x for x in book_description if x != ''][-1]
-        book_description = " ".join([x for x in book_description if re.search('(\d\.$)|\+', x)])
+        tags = " | ".join([x.text for x in soup.find('span', class_='tags-links').find_all('a')])
+    except AttributeError:
+        tags = None
+        
+    try:
+        book_description = " ".join([x.text for x in article.find_all('p') if re.match(r'.*\„(.*)\d{4}$', x.text)])
     except (AttributeError, KeyError, IndexError, TypeError):
         book_description = None  
         
-    if book_description == None or book_description == "":
-        try:
-            book_description = [x.text for x in article.find_all('p', class_='MsoNormal') if x != " " ]
-            book_description = [x.replace('\n', ' ').replace('\xa0', '').strip() for x in book_description]
-            book_description = " ".join([x for x in book_description if re.search('(\d\.$)|\+', x)])
-        except (AttributeError, KeyError, IndexError, TypeError):
-            book_description = None
-        
 
+        
     try:   
-        author_of_book = re.findall(r'^[\p{L}\s\-\.]+(?=\,)', book_description)[0].strip()
+        first_quotation_mark = re.search(r'\„', book_description).span()
+        author_of_book = book_description[:int(first_quotation_mark[0])].strip()
     except (AttributeError, KeyError, IndexError, TypeError):
         author_of_book = None  
         
+        
+    # try:    
+    #     title_of_book = re.search(r'\„.*\”', book_description).group(0)
+    # except (AttributeError, KeyError, IndexError, TypeError):
+    #     title_of_book = None   
+        
+    
     try:    
-        title_of_book = " | ".join(re.findall(r'„.*”', book_description)).replace('”,', '” |')
+        title_of_book = " | ".join([x.group(0) for x in re.finditer(r'\„[\p{L}\,\s\?\!\.]*\”', book_description)])
     except (AttributeError, KeyError, IndexError, TypeError):
         title_of_book = None   
         
         
+    if " | " in title_of_book:    #Jesli jest kilka tytułów książki tzn. ze mamy dwie pozycje, a wiec trzeba sprawdzic, czy nie nalezy dopisac kogos do autorów
+        if len([x.group(0) for x in re.finditer(author_of_book, book_description)]) < 2:   #Sprawdzenie, czy juz znaleziony autor sie powtarza w opisie. Jesli tak, to odpuszczamy dalsza analize, bo to najprawodopodniej dwie ksiazki (dwa tytuly) jednego autora
+            try:
+                first_book_year_span = [x for x in re.finditer(r'\d{4}', book_description)][0].span()[1]
+                end_of_author = [x for x in re.finditer(r'\„', book_description)][1].span()[0]
+                second_author = book_description[int(first_book_year_span):int(end_of_author)].strip()
+                author_of_book = author_of_book + " | " + second_author
+            except (AttributeError, KeyError, IndexError, TypeError):
+                author_of_book = None
+        
     try:
-        publisher = re.search(r'wyd.*,', book_description).group(0).replace(',', '')
+        publisher = " | ".join(re.findall(r'wyd\.\:\s[\p{L}\s\-]*', book_description))
     except (AttributeError, KeyError, IndexError, TypeError):
         publisher = None
     
     try:
-        place_and_year = re.search(r'[A-Z\p{L}][a-z\p{L}]+\s\d{4}–?\d?\d?\d?\d?', book_description).group(0)  
+        place_and_year = " | ".join([x.strip() for x in re.findall(r'\p{L}*\s?-?\p{L}*\s\d{4}', book_description)])
     except (AttributeError, KeyError, IndexError, TypeError):
         place_and_year = None
         
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'poczytajdziecku|blogger', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a', href=True)] if not re.findall(r'poczytajmi', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
-        
+    
     try: 
-        photos_links = ' | '.join([x['src'] for x in article.find_all('img')])  
+        photos_links = ' | '.join([x['src'] for x in article.find_all('img', src=True)])  
     except (AttributeError, KeyError, IndexError):
         photos_links = None
 
@@ -119,6 +142,7 @@ def dictionary_of_article(article_link):
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
+                             'Tagi': tags,
                              'Opis książki': book_description, 
                              'Autor książki': author_of_book, 
                              'Tytuł książki': title_of_book,
@@ -137,15 +161,6 @@ articles_links = []
 sitemap_link = get_articles_links('https://poczytajmi.blog/sitemap.xml')
 
 
-#Wyrzucenie niepotrzebnych linków (do strony głownej, kontaktu itp.)
-
-        
-    
-#306 artykułów
-#Usunięcie zdublowanych:
-articles_links = list(dict.fromkeys(articles_links)) 
-
-
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
@@ -154,13 +169,12 @@ with ThreadPoolExecutor() as excecutor:
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=False)
-df = df.dropna(subset=["Data publikacji"]) #Usunięcie dwóch linków bez daty (podstrony)
 
 
-with open(f'data\\poczytajdziecku_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data\\poczytajmi_blog_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)   
 
-with pd.ExcelWriter(f"data\\poczytajdziecku_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
+with pd.ExcelWriter(f"data\\poczytajmi_blog_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
     df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
     writer.save()     
    
