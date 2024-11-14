@@ -179,7 +179,7 @@ df = df.sort_values('Data publikacji', ascending=True)
 
 with pd.ExcelWriter(f"data\\kultura_gazetapl_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False)   
-    writer.save()     
+   
    
     
 
