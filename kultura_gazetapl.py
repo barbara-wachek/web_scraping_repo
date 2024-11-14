@@ -112,7 +112,7 @@ dictionary_of_category_links = get_category_links('https://kultura.gazeta.pl/kul
 category_links = [v for k,v in dictionary_of_category_links.items()]
 
 articles_links = []
-# list(tqdm(map(get_articles_links, category_links),total=len(articles_links))) #Do zeskrobania wszystkich linków
+list(tqdm(map(get_articles_links, category_links),total=len(articles_links))) #Do zeskrobania wszystkich linków
 #Wynik: ponad 55 tysiecy linków (ale z duplikatami)
 
 # get_articles_links(category_links[0]) #Wiadomości (około 27 421)
@@ -127,29 +127,58 @@ articles_links = []
 
 #Odrzucić duplikaty (niektore linki mogą mieć kilka kategorii, wiec znajdowały się w kilku zbiorach). Różnica około 26 tysiecy
 
-articles_links = list(dict.fromkeys(articles_links))
+articles_links = list(dict.fromkeys(articles_links)) #30 455 (2024-10-31) #30 653 (2024-11-14)
 
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
+ 
 
-    
+#23168 zrobilo sie, a potem blad: SSLError: HTTPSConnectionPool(host='www.ciemnastronamiasta.gazeta.pl', port=443): Max retries exceeded with url: /ciemnastrona_kultura/7,166729,24091311,polskie-kryminaly-maja-wyjatkowy-klimat-nasze-miasta-doskonale.html?bo=1 (Caused by SSLError(CertificateError("hostname 'www.ciemnastronamiasta.gazeta.pl' doesn't match either of '*.gazeta.pl', 'gazeta.pl'")))       
+ 
+all_results[23324]  
+articles_links[23323]  
+
+
+if 'https://kultura.gazeta.pl/kultura/7,114628,24101688,teatr-polonia-krystyny-jandy-swietuje-13-urodziny.html' in articles_links:
+    print(articles_links.index('https://kultura.gazeta.pl/kultura/7,114628,24101688,teatr-polonia-krystyny-jandy-swietuje-13-urodziny.html'))
+    last_scraped = articles_links.index('https://kultura.gazeta.pl/kultura/7,114628,24101688,teatr-polonia-krystyny-jandy-swietuje-13-urodziny.html')
+
+articles_links_second_part = articles_links[last_scraped+1:]
+
+#Zrobienie kopii all_results, która zawiera 23 tysiace rekordów:
+    all_results_first_part = all_results
+
+
+all_results = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(dictionary_of_article, articles_links_second_part),total=len(articles_links_second_part)))
+
+
+#Scalenie dwóch list: 
+final_all_results = all_results_first_part + all_results
+ 
+
+
+
+
+
 with open(f'data\\kultura_gazetapl_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)   
+    json.dump(final_all_results, f, ensure_ascii=False)   
 
 
-df = pd.DataFrame(all_results).drop_duplicates()
+df = pd.DataFrame(final_all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
-df = df.sort_values('Data publikacji', ascending=False)
+df = df.sort_values('Data publikacji', ascending=True)
    
 # df['Autor'].notna()
 
 #Jeżeli przy jakimś rekordzie nie udalo sie pobrać daty, to albo link jest już nieaktywny, albo są to jakieś quizy lub materiały promocyjne. Najlepiej wyrzucić na etapie DF, żeby już nikt tego nie analizował niepotrzebnie. 
 
 
-with pd.ExcelWriter(f"data\\kultura_gazetapl_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
-    df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
+with pd.ExcelWriter(f"data\\kultura_gazetapl_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+    df.to_excel(writer, 'Posts', index=False)   
     writer.save()     
    
     
