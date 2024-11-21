@@ -1,3 +1,12 @@
+'''
+Selenium
+Strona bardzo trudna do zeskrobania
+Nie ma dat publikacji
+Kilka linków do numerów jest już nieaktywnych: nr 3, 4, 5, 7, 10
+PROBLEM: Teksty literackie są pod jednym linkiem z komentarzami do nich. Kwestia metodologiczna, czy to rozbijamy czy nie. Na razie jest to razem. 
+Skrobię strony na podstawie linku do całego czasopisma. Strona ma skomplikowaną budowę i sporo jest elementów dynamicznych. 
+'''
+
 #%%import
 from __future__ import unicode_literals
 import requests
@@ -11,15 +20,9 @@ from datetime import datetime
 import json
 
 from selenium import webdriver
-# from selenium.webdriver.chrome.options import Options
-# from selenium.webdriver.common.by import By
-# from selenium.webdriver.support.wait import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
-
 
 
 #%% def
-
 
 def get_issues_links(archive_link):
     options = webdriver.ChromeOptions()
@@ -53,55 +56,71 @@ def get_article_links(link):
 
     return articles_links
     
-#Problemy z javascriptem. Kontynuować od tego miejsca      
+
+def dictionary_of_article(issue_link):
     
-def dictionary_of_article(article_link):
-    article_link = 'https://kontent.net.pl/czytaj/1#Zestaw_wierszy_M_Prankego'
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    driver = webdriver.Chrome(options=options)
-    driver.get(article_link)
-    time.sleep(3)
-    html = driver.page_source
-    driver.quit()
-    soup = BeautifulSoup(html, 'html.parser')
-    
-    
-    title_of_article = soup.find('aside').text
-    
-    author = soup.find('a', class_='url fn').text.strip()
-    title_of_article = soup.find('h1', class_='title entry-title').text.strip()
-    date_of_publication = soup.find('abbr', class_='time published')['title']
-    date_of_publication = re.findall(r'\d{4}-\d{2}-\d{2}', date_of_publication)[0]
-    tags = " | ".join([x.text.strip() for x in soup.find_all('a', class_='label')])
-    article = soup.find('div', class_='article-content entry-content')
-    text_of_article = article.text.strip()
-    
-    try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|chochlikkulturalny', x)])
-    except (AttributeError, KeyError, IndexError):
-        external_links = None
-         
-    try: 
-        photos_links = ' | '.join([x['src'] for x in article.find_all('img')])  
-    except (AttributeError, KeyError, IndexError):
-        photos_links = None
-    
-    
-    dictionary_of_article = {'Link': article_link,
-                             'Data publikacji': date_of_publication,
-                             'Autor': author,
-                             'Tytuł artykułu': title_of_article,
-                             'Tagi': tags,
-                             'Tekst artykułu': text_of_article,
-                             'Linki zewnętrzne': False if external_links == '' else external_links,
-                             'Zdjęcia/Grafika': True if photos_links != None else False,
-                             'Linki do zdjęć': photos_links
-                             }
+    if re.search(r'https?:\/\/kontent\.net\.pl\/czytaj\/', issue_link):
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        driver = webdriver.Chrome(options=options)
+        driver.get(issue_link)
+        time.sleep(3)
+        html = driver.page_source
+        driver.quit()
+        soup = BeautifulSoup(html, 'html.parser')
+        issue = soup.find('header', class_='thiccOnly').text   
+        sections = soup.find_all('section', id=lambda x: not x.startswith('menu') if x else False)
+        
+        for section in sections:     
+            try:
+                article_link = section.find('header').find('a')['href']
+                article_link = 'https://kontent.net.pl' + article_link
+            except:
+                article_link = None
+                
+                
+            # try:
+            #     category = section.find('header').find('h3').text
+            # except AttributeError:
+            #     category = None
+                
+            try:
+                author_of_article = section.find('strong').text
+            except:
+                author_of_article = None
+                
+            try:
+                author_of_comment = [x.text for x in section.find_all('strong')][1]
+            except: 
+                author_of_comment = None
+                
+                
+            try:
+                title_of_article = section.find('cite').text
+            except:
+                title_of_article = None
+                
+                
+            if author_of_comment != None or author_of_comment != []:
+                try:
+                    title_of_comment = [x.text for x in section.find_all('cite')][1]
+                except:
+                    title_of_comment = None
+                
             
-
-    all_results.append(dictionary_of_article)
-
+            text_of_article = " ".join([x.text for x in section.find_all('main')])
+            
+            dictionary_of_article = {'Link': article_link,
+                                     'Numer czasopisma': issue,
+                                     'Autor artykułu': author_of_article,
+                                     'Tytuł artykułu': title_of_article,
+                                     'Autor komentarza': author_of_comment,
+                                     'Tytuł komentarza': title_of_comment,
+                                     'Tekst artykułu': text_of_article,
+                                     }   
+            
+            all_results.append(dictionary_of_article)
+            
 
 #%% main
 
@@ -109,39 +128,28 @@ issues_links = get_issues_links('https://kontent.net.pl/strona/89') #linki z num
 only_links = [t[0] for t in issues_links]
 
 
-articles_links = []
-with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(get_article_links, only_links),total=len(only_links)))
+# articles_links = []    #821 artykułów 
+# with ThreadPoolExecutor() as excecutor:
+#     list(tqdm(excecutor.map(get_article_links, only_links),total=len(only_links)))
 
-
-
-
-
-
-
-
-
-
+# articles_links_unique = list(set(articles_links))   #412 bez dubletów!
 
 
 all_results = []
-list(tqdm(map(dictionary_of_article, articles_links),total=len(articles_links)))
+with ThreadPoolExecutor(max_workers=4) as excecutor:
+    list(tqdm(map(dictionary_of_article, only_links),total=len(only_links)))
 
 
-# all_results = []
-# with ThreadPoolExecutor() as excecutor:
-#     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
     
-with open(f'data\\chochlikkulturalny_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data\\kontent_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)   
 
 df = pd.DataFrame(all_results).drop_duplicates()
-df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
-df = df.sort_values('Data publikacji', ascending=False)
+
       
-with pd.ExcelWriter(f"data\\chochlikkulturalny_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
-    df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
-    writer.save()     
+with pd.ExcelWriter(f"data\\kontent_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+    df.to_excel(writer, 'Posts', index=False)   
+    
    
     
 
