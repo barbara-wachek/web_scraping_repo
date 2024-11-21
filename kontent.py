@@ -9,7 +9,6 @@ Skrobię strony na podstawie linku do całego czasopisma. Strona ma skomplikowan
 
 #%%import
 from __future__ import unicode_literals
-import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import regex as re
@@ -38,26 +37,27 @@ def get_issues_links(archive_link):
     return issues_links
     
     
-def get_article_links(link):
+# def get_article_links(link):
     
-    if link.startswith('http://kontent.net.pl/czytaj'):
-        options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
-        driver = webdriver.Chrome(options=options)
-        driver.get(link)
-        time.sleep(3)
-        html = driver.page_source
-        driver.quit()
-        soup = BeautifulSoup(html, 'html.parser')
+#     if link.startswith('http://kontent.net.pl/czytaj'):
+#         options = webdriver.ChromeOptions()
+#         options.add_argument('--headless')
+#         driver = webdriver.Chrome(options=options)
+#         driver.get(link)
+#         time.sleep(3)
+#         html = driver.page_source
+#         driver.quit()
+#         soup = BeautifulSoup(html, 'html.parser')
         
-        links = [e.get('href') for e in soup.find_all('a') if e.get('href') is not None and '/czytaj/' in e.get('href')]
-        full_links = [f'https://kontent.net.pl{link}' for link in links]
-        articles_links.extend(full_links)
+#         links = [e.get('href') for e in soup.find_all('a') if e.get('href') is not None and '/czytaj/' in e.get('href')]
+#         full_links = [f'https://kontent.net.pl{link}' for link in links]
+#         articles_links.extend(full_links)
 
-    return articles_links
+#     return articles_links
     
 
 def dictionary_of_article(issue_link):
+    # issue_link = 'https://kontent.net.pl/czytaj/30#'
     
     if re.search(r'https?:\/\/kontent\.net\.pl\/czytaj\/', issue_link):
         options = webdriver.ChromeOptions()
@@ -136,7 +136,7 @@ only_links = [t[0] for t in issues_links]
 
 
 all_results = []
-with ThreadPoolExecutor(max_workers=4) as excecutor:
+with ThreadPoolExecutor(max_workers=10) as excecutor:
     list(tqdm(map(dictionary_of_article, only_links),total=len(only_links)))
 
 
