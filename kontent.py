@@ -37,27 +37,8 @@ def get_issues_links(archive_link):
     return issues_links
     
     
-# def get_article_links(link):
-    
-#     if link.startswith('http://kontent.net.pl/czytaj'):
-#         options = webdriver.ChromeOptions()
-#         options.add_argument('--headless')
-#         driver = webdriver.Chrome(options=options)
-#         driver.get(link)
-#         time.sleep(3)
-#         html = driver.page_source
-#         driver.quit()
-#         soup = BeautifulSoup(html, 'html.parser')
-        
-#         links = [e.get('href') for e in soup.find_all('a') if e.get('href') is not None and '/czytaj/' in e.get('href')]
-#         full_links = [f'https://kontent.net.pl{link}' for link in links]
-#         articles_links.extend(full_links)
-
-#     return articles_links
-    
 
 def dictionary_of_article(issue_link):
-    # issue_link = 'https://kontent.net.pl/czytaj/30#'
     
     if re.search(r'https?:\/\/kontent\.net\.pl\/czytaj\/', issue_link):
         options = webdriver.ChromeOptions()
@@ -78,11 +59,6 @@ def dictionary_of_article(issue_link):
             except:
                 article_link = None
                 
-                
-            # try:
-            #     category = section.find('header').find('h3').text
-            # except AttributeError:
-            #     category = None
                 
             try:
                 author_of_article = section.find('strong').text
@@ -107,8 +83,21 @@ def dictionary_of_article(issue_link):
                 except:
                     title_of_comment = None
                 
+            if author_of_comment == author_of_article or title_of_comment == title_of_article:
+                author_of_comment = None
+                title_of_comment = None
             
-            text_of_article = " ".join([x.text for x in section.find_all('main')])
+            
+            text = " ".join([x.text for x in section.find_all('main')])
+            
+            try:
+                span = re.search(f'{author_of_comment}', text).span(0)[0]
+                text_of_article = text[0:span]
+                text_of_comment = text[span:]
+            except:
+                text_of_article = text
+                text_of_comment = None
+
             
             dictionary_of_article = {'Link': article_link,
                                      'Numer czasopisma': issue,
@@ -117,6 +106,7 @@ def dictionary_of_article(issue_link):
                                      'Autor komentarza': author_of_comment,
                                      'Tytuł komentarza': title_of_comment,
                                      'Tekst artykułu': text_of_article,
+                                     'Tekst komentarza': text_of_comment
                                      }   
             
             all_results.append(dictionary_of_article)
@@ -128,19 +118,12 @@ issues_links = get_issues_links('https://kontent.net.pl/strona/89') #linki z num
 only_links = [t[0] for t in issues_links]
 
 
-# articles_links = []    #821 artykułów 
-# with ThreadPoolExecutor() as excecutor:
-#     list(tqdm(excecutor.map(get_article_links, only_links),total=len(only_links)))
-
-# articles_links_unique = list(set(articles_links))   #412 bez dubletów!
-
-
 all_results = []
 with ThreadPoolExecutor(max_workers=10) as excecutor:
     list(tqdm(map(dictionary_of_article, only_links),total=len(only_links)))
 
 
-    
+
 with open(f'data\\kontent_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)   
 
