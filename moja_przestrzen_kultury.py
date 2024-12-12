@@ -8,61 +8,81 @@ from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
-from functions import get_links
+from functions import get_links, date_change_format_short
 
 
 #%% def    
 
 def dictionary_of_article(article_link):
-    article_link = 'https://mojaprzestrzenkultury.pl/archiwa/1722'
+    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/1722'
+    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/1716'   #autor w tekscie na koncu
+    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/1699'
+    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/199'
+    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/2900' #data inaczej
+    
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
         html_text = requests.get(article_link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
-    try:
-        date_of_publication = soup.find('time', class_='entry-date published')
+    comments = None
     
-    # try:
-    #     author = soup.find('span', {'itemprop':'name'}).text
-    # except AttributeError:
-    #     author = None
+    try:
+        if soup.find('time', class_='entry-date published'):
+            date_of_publication = soup.find('time', class_='entry-date published').text   
+        else:
+            date_of_publication = soup.find('time', class_='entry-date published updated').text 
+            comments = "Data edycji, nie publikacji!"
+        date_of_publication = date_change_format_short(date_of_publication)
+    except:
+        date_of_publication = None
+    
     
     try:
         title_of_article = soup.find('h1', class_='entry-title').text.strip()
     except:
         title_of_article = None
         
-     
+    
     try:
-        category = soup.find('div', class_='entry-categories').text.strip()
+        category = " | ".join([e.text for e in soup.find('div', class_='entry-categories').find_all('a')])
     except:
         category = None
     
         
     try:
-        tags = [x.text for x in soup.find('div', class_='entry-tags clearfix').find_all('a')]
+        tags = " | ".join([x.text for x in soup.find('div', class_='entry-tags clearfix').find_all('a')])
     except:
         tags = None
         
     
-    
-    article = soup.find('div', class_='post-body entry-content')
+    article = soup.find('div', class_='entry-content clearfix')
     
     try:
-        text_of_article = article.text.strip().replace("\n", " ").replace("  ", " ")
+        text_of_article = [p.text.strip().replace("\n", " ").replace("  ", " ") for p in article.find_all('p')]
+        text_of_article = " ".join([' | ' if len(p) == 0 else p for p in text_of_article])          # znakiem pipe'a odzielam od siebie wiersze
     except:
         text_of_article = None
     
     
     try:
-        tags = " | ".join([x.text for x in soup.find('span', class_='post-labels').find_all('a')]) 
+        if re.search(r'(Czas na poezję:? )(.*)', title_of_article):
+            author = re.sub(r'(Czas na poezję:? )(.*)', r'\2', title_of_article).title().strip()
+        else:
+            author = [p for p in article.find_all('p', {'style':'text-align: right;'})][-1].text.title().strip()
+           
+    except:
+        author = None
+    
+    
+    try:
+        tags = " | ".join([x.text for x in soup.find('div', class_='entry-tags clearfix').find_all('a')]) 
     except:
         tags = None
         
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|dakowicz', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'mojaprzestrzenkultury|addtoany', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
         
@@ -79,9 +99,8 @@ def dictionary_of_article(article_link):
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
+                             'Uwagi': comments,
                              'Linki zewnętrzne': external_links,
-                             'Zdjęcia/Grafika': True if [x['src'] for x in article.find_all('img')] else False,
-                             'Filmy': True if [x['src'] for x in article.find_all('iframe')] else False,
                              'Linki do zdjęć': photos_links
                         }
         
@@ -99,28 +118,30 @@ all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
-with open(f'data\\dakowicz_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)    
-
+   
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji')
+
    
-with pd.ExcelWriter(f"data\\dakowicz_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+with open(f'data\\moja_przestrzen_kultury_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(all_results, f, ensure_ascii=False) 
+
+with pd.ExcelWriter(f"data\\moja_przestrzen_kultury_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False)   
    
    
 
 #%%Uploading files on Google Drive
 
-gauth = GoogleAuth()           
-drive = GoogleDrive(gauth)   
+# gauth = GoogleAuth()           
+# drive = GoogleDrive(gauth)   
       
-upload_file_list = [f"data\\dakowicz_{datetime.today().date()}.xlsx", f'data\\dakowicz_{datetime.today().date()}.json']
-for upload_file in upload_file_list:
-	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
-	gfile.SetContentFile(upload_file)
-	gfile.Upload()  
+# upload_file_list = [f"data\\dakowicz_{datetime.today().date()}.xlsx", f'data\\dakowicz_{datetime.today().date()}.json']
+# for upload_file in upload_file_list:
+# 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
+# 	gfile.SetContentFile(upload_file)
+# 	gfile.Upload()  
 
 
 
