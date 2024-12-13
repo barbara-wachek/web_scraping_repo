@@ -32,102 +32,68 @@ def get_culture_pages(link):
 
 
 def get_articles_links(link):
-    link = 'https://noizz.pl/kultura?page=0'
     html_text = requests.get(link).text
     while 'Error 503' in html_text:
         time.sleep(2)
         html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
-    
-    # articles = [x for x in soup.find('div', class_='gridContainer gridContainer_').find_all('a', class_=' itemList gridItem')]
+    articles = [x['href'] for x in soup.find_all('a', class_='itemLink') if re.search(r'^https\:\/\/noizz\.pl\/kultura\/.+', x['href'])] 
 
-    articles = [x['href'] for x in soup.find_all('a', class_='itemLink')] #Za duzo odsiac te inne!
-
-
-
-
-
-
-
-
-
-
+    articles_links.extend(articles)
 
 
 def dictionary_of_article(article_link):
-    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/1722'
-    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/1716'   #autor w tekscie na koncu
-    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/1699'
-    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/199'
-    # article_link = 'https://mojaprzestrzenkultury.pl/archiwa/2900' #data inaczej
-    
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
         html_text = requests.get(article_link).text
     soup = BeautifulSoup(html_text, 'lxml')
     
-    comments = None
     
     try:
-        if soup.find('time', class_='entry-date published'):
-            date_of_publication = soup.find('time', class_='entry-date published').text   
-        else:
-            date_of_publication = soup.find('time', class_='entry-date published updated').text 
-            comments = "Data edycji, nie publikacji!"
-        date_of_publication = date_change_format_short(date_of_publication)
+        date_of_publication = soup.find('time')['datetime']
+        date_of_publication = re.match(r'^\d{4}-\d{2}-\d{2}', date_of_publication).group()
     except:
         date_of_publication = None
     
     
     try:
-        title_of_article = soup.find('h1', class_='entry-title').text.strip()
+        title_of_article = soup.find('h1', class_='title').text.strip()
     except:
         title_of_article = None
         
+
+    
+    article = soup.find('div', class_='articleBody')
     
     try:
-        category = " | ".join([e.text for e in soup.find('div', class_='entry-categories').find_all('a')])
-    except:
-        category = None
+        lead = soup.find('div', class_='lead').text
+        rest_text = " ".join([e.text for e in soup.find('div', class_='whitelistPremium').find_all('p', class_='paragraph')])
     
+        text_of_article = lead + rest_text
         
-    try:
-        tags = " | ".join([x.text for x in soup.find('div', class_='entry-tags clearfix').find_all('a')])
-    except:
-        tags = None
-        
-    
-    article = soup.find('div', class_='entry-content clearfix')
-    
-    try:
-        text_of_article = [p.text.strip().replace("\n", " ").replace("  ", " ") for p in article.find_all('p')]
-        text_of_article = " ".join([' | ' if len(p) == 0 else p for p in text_of_article])          # znakiem pipe'a odzielam od siebie wiersze
     except:
         text_of_article = None
     
     
     try:
-        if re.search(r'(Czas na poezję:? )(.*)', title_of_article):
-            author = re.sub(r'(Czas na poezję:? )(.*)', r'\2', title_of_article).title().strip()
-        else:
-            author = [p for p in article.find_all('p', {'style':'text-align: right;'})][-1].text.title().strip()
-           
+        author = soup.find('span', class_="nameAuthor").text.strip()
+        author_split = re.search(r'\n', author).span(0)[0]
+        author = author[0:author_split]
     except:
         author = None
     
     
     try:
-        tags = " | ".join([x.text for x in soup.find('div', class_='entry-tags clearfix').find_all('a')]) 
+        tags = " | ".join([x.text for x in soup.find_all('a', class_='itemTagLink')]) 
     except:
         tags = None
         
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'mojaprzestrzenkultury|addtoany', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'noizz', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
-        
         
     try: 
         photos_links = ' | '.join([x['src'] for x in article.find_all('img')])  
@@ -137,11 +103,9 @@ def dictionary_of_article(article_link):
     dictionary_of_article = {'Link': article_link,
                              'Data publikacji': date_of_publication,
                              'Autor': author,
-                             'Kategoria': category,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
-                             'Uwagi': comments,
                              'Linki zewnętrzne': external_links,
                              'Linki do zdjęć': photos_links
                         }
@@ -154,13 +118,13 @@ def dictionary_of_article(article_link):
 culture_pages = get_culture_pages('https://noizz.pl/kultura')
 
 
-articles_links = get_links('https://mojaprzestrzenkultury.pl/post-sitemap.xml')
-
-# articles_links_yoast = get_links('https://mojaprzestrzenkultury.pl/post-sitemap.xml')  #Są dwie sitemapy, więc porownałam ilosc linków do artykułów. Obie mają tyle samo linków. 
+articles_links = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(get_articles_links, culture_pages),total=len(culture_pages)))
 
 
 all_results = []
-with ThreadPoolExecutor() as excecutor:
+with ThreadPoolExecutor(max_workers=4) as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
    
@@ -169,24 +133,13 @@ df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji')
 
    
-with open(f'data\\moja_przestrzen_kultury_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data\\noizz_kultura_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False) 
 
-with pd.ExcelWriter(f"data\\moja_przestrzen_kultury_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+with pd.ExcelWriter(f"data\\noizz_kultura_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False)   
    
    
-
-#%%Uploading files on Google Drive
-
-# gauth = GoogleAuth()           
-# drive = GoogleDrive(gauth)   
-      
-# upload_file_list = [f"data\\dakowicz_{datetime.today().date()}.xlsx", f'data\\dakowicz_{datetime.today().date()}.json']
-# for upload_file in upload_file_list:
-# 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
-# 	gfile.SetContentFile(upload_file)
-# 	gfile.Upload()  
 
 
 
