@@ -121,17 +121,37 @@ only_links = [t[0] for t in issues_links]
 all_results = []
 with ThreadPoolExecutor(max_workers=10) as excecutor:
     list(tqdm(map(dictionary_of_article, only_links),total=len(only_links)))
-
-
-
-with open(f'data\\kontent_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)   
+    
 
 df = pd.DataFrame(all_results).drop_duplicates()
+#Rozbicie podwójnych rekordów: tekst + komentarz na dwa osobne rekordy
 
+
+df_only_articles = df.drop(columns=['Autor komentarza', 'Tytuł komentarza', 'Tekst komentarza'])
+df_only_articles = df_only_articles.loc[df_only_articles['Tytuł artykułu'].notna()]
+df_only_articles.columns
+df_only_articles = df_only_articles.rename(columns={'Autor artykułu': 'Autor'})
+
+
+#Wyrzucenie pustych wartosci (niektóre artykuły nie miały komentarzy)
+df_only_comments = df.drop(columns=['Autor artykułu', 'Tytuł artykułu', 'Tekst artykułu'])
+df_only_comments = df_only_comments.loc[df_only_comments['Tytuł komentarza'].notna()]
+df_only_comments = df_only_comments.rename(columns={'Autor komentarza':'Autor', 'Tytuł komentarza': 'Tytuł artykułu', 'Tekst komentarza':'Tekst artykułu'})
+df_only_comments['Uwagi'] = 'komentarz'
+
+
+#połączenie w 1 dataframe
+df_concat = pd.concat([df_only_articles, df_only_comments])
+df_concat = df_concat.replace({np.nan: None})
+
+
+list_of_dicts = df_concat.to_dict(orient='records')
+
+with open(f'data\\kontent_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+    json.dump(list_of_dicts, f, ensure_ascii=False)   
       
 with pd.ExcelWriter(f"data\\kontent_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
-    df.to_excel(writer, 'Posts', index=False)   
+    df_concat.to_excel(writer, 'Posts', index=False)   
     
    
     
