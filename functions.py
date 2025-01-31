@@ -24,10 +24,11 @@ def date_change_format_short(date_of_publication):
 
 #Funkcja zmieniąjąca format daty z "wtorek, 12 października 2002" na "2002-10-12"
 def date_change_format_long(date_of_publication):
-    date = re.sub(r'(.*\,\s)(\d{1,2}\s)(.*)(\s\d{4})', r'\2\3\4', date_of_publication).strip()
+    # date_of_publication = 'niedziela, 14, sierpień, 2022'
+    date = re.sub(r'(.*\,\s)(\d{1,2}\,?\s)(.*)(\s\d{4}\,?)', r'\2\3\4', date_of_publication).strip()
     lookup_table = {"stycznia": "01", "lutego": "02", "marca": "03", "kwietnia": "04", "maja": "05", "czerwca": "06", "lipca": "07", "sierpnia": "08", "września": "09", "października": "10", "listopada": "11", "grudnia": "12", "styczeń": "01", "luty": "02", "marzec": "03", "kwiecień": "04", "maj": "05", "czerwiec": "06", "lipiec": "07", "sierpień": "08", "wrzesień": "09", "październik": "10", "listopad": "11", "grudzień": "12"}
     for k, v in lookup_table.items():
-        date = date.replace(k, v)
+        date = date.replace(k, v).replace(',', '')
     
     result = time.strptime(date, "%d %m %Y")
     changed_date = datetime.fromtimestamp(mktime(result))   
