@@ -113,8 +113,8 @@ with open(f'data/esensja_{datetime.today().date()}.json', 'w', encoding='utf-8')
     json.dump(all_results, f, ensure_ascii=False, default=str)        
 
 df = pd.DataFrame(all_results)
-df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
-df = df.sort_values('Data publikacji', ascending=False)
+# df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
+# df = df.sort_values('Data publikacji', ascending=False)
 
 with pd.ExcelWriter(f"data/esensja_{datetime.today().date()}.xlsx", engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:    
     df.to_excel(writer, 'Posts', index=False)
