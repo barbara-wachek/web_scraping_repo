@@ -7,25 +7,55 @@ import time
 from tqdm import tqdm  #licznik
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from urllib.parse import urljoin
 import json
 from functions import date_change_format_long
+
 # from pydrive.auth import GoogleAuth
 # from pydrive.drive import GoogleDrive
 
 
 #%% def    
-def get_archive_links(link):   
-    link = 'https://zdaniemszota.pl/'
+def get_archive_links(link): 
+    #Zbiera linki do archiwum (miesięcy)
+    # link = 'https://zdaniemszota.pl/'
+    
     html_text_sitemap = requests.get(link).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
     
-    [[x.li.a['href'] for x in x.find_all('ul', class_='sub-menu')] for x in soup.find_all('li', class_='menu-item-has-children')]
+    archive = soup.find('li', class_='menu-item-has-children')
+    years = archive.find_all('li', class_='menu-item-has-children') 
+   
+    pattern = re.compile(r"/archiwum/\d{4}-\d{2}")
     
-    links = {x.li.a['href'] for x in soup.find_all('ul', class_='sub-menu') for x in soup.find_all('li', class_='menu-item-has-children')}
-unique_links = list(links)
+    months_links = [
+       li for year in years for li in year.find_all('li')  # Iterujemy przez każdy rok i jego elementy <li>
+       if li.find('a') and li.find('a').get('href') and pattern.search(li.find('a').get('href'))
+    ]
+    # Pobieramy tylko same URL-e
+    months_urls =  [urljoin(link, li.find('a')['href']) for li in months_links]
     
-    sitemap_links = [e.text for e in soup.find_all('loc') if re.search(r'https\:\/\/czytamaja\.pl\/.+', e.text)]
-    return sitemap_links
+    return months_urls
+
+
+def get_articles_links(archive_link):
+    #Uwzględnić stronicowanie postów dla poszczególnych miesięcy! 
+    
+    
+    archive_link = 'https://zdaniemszota.pl/archiwum/2025-01'
+    archive_link = 'https://zdaniemszota.pl/archiwum/2024-04'
+    
+    html_text_sitemap = requests.get(link).text
+    soup = BeautifulSoup(html_text_sitemap, 'lxml')
+    
+    links = [x for x in soup.find_all()]
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -125,7 +155,7 @@ def dictionary_of_article(article_link):
 
 
 #%% main
-articles_links = get_articles_links('https://czytamaja.pl/post-sitemap.xml')
+months_urls = get_archive_links('https://zdaniemszota.pl/')
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
