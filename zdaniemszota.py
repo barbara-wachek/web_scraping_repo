@@ -37,88 +37,87 @@ def get_archive_links(link):
     
     return months_urls
 
-
+articles_links = []
 def get_articles_links(archive_link):
-    #Uwzględnić stronicowanie postów dla poszczególnych miesięcy! 
+    format_link = 'https://zdaniemszota.pl'
     
+    # archive_link = 'https://zdaniemszota.pl/archiwum/2025-01'
+    # archive_link = 'https://zdaniemszota.pl/archiwum/2024-04'
     
-    archive_link = 'https://zdaniemszota.pl/archiwum/2025-01'
-    archive_link = 'https://zdaniemszota.pl/archiwum/2024-04'
-    
-    html_text_sitemap = requests.get(link).text
+    html_text_sitemap = requests.get(archive_link).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
     
-    links = [x for x in soup.find_all()]
+    links = [urljoin(format_link, x.a.get('href')) for x in soup.find_all('h1', class_='entry-title')]
+    articles_links.extend(links)
     
+    next_element = soup.find('a', {'rel': 'next'})
+    next_href = next_element['href'] if next_element else None
     
+    while next_href: 
+        html_text_sitemap = requests.get(urljoin(format_link, next_href)).text
+        soup = BeautifulSoup(html_text_sitemap, 'lxml')
+        
+        links = [urljoin(format_link, x.a.get('href')) for x in soup.find_all('h1', class_='entry-title')]
+        articles_links.extend(links)
+        
+        next_element = soup.find('a', {'rel': 'next'})
+        next_href = next_element['href'] if next_element else None
     
-    
-    
-    
-    
-    
+    return articles_links
     
     
 def dictionary_of_article(article_link):
-    # article_link = 'https://czytamaja.pl/smiech-przez-lzy-emilia-dluzewska/'
-    # article_link = 'https://czytamaja.pl/niezwykle-zycie-nellie-bly-czyli-z-piorem-i-sukienka/'
-    # article_link = 'https://czytamaja.pl/wyprawa-shackletona-czyli-drzyj-zaogo/'
-    # article_link = 'https://czytamaja.pl/z-niejednej-poki-czyli-dugo-wyczekiwany/'
-    # article_link = 'https://czytamaja.pl/ni-pies-ni-wydra-czyli-recepty-narysowane/'
+    article_link = 'https://zdaniemszota.pl/5268-wiersz-nocna-pora-ija-kiwa-osiem-lat-mowic-tlum-aneta-kaminska'
+    article_link = 'https://zdaniemszota.pl/4944-ksiazka-tygodnia-maggie-shipstead-wielki-krag'
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
         html_text = requests.get(article_link).text
     soup = BeautifulSoup(html_text, 'lxml')
- 
-    author = 'Maja Sołtysik'
+
     
     try:
-        title_of_article = soup.find('h1', class_='single-article-name').text.strip()
+        title_of_article = soup.find('h1', class_='entry-title').text.strip()
     except:
         title_of_article = None
    
     
-        
-    date = soup.find('div', class_='single-article-date').text
-    date_of_publication = date_change_format_long(date)
+    try:   
+        footer = soup.find('span', class_='post-written-by').text.strip()
+        date_of_publication = re.sub(r'(?s).*?(\d{2})\.(\d{2})\.(\d{4}).*', r'\3-\2-\1', footer).strip()
+    except:
+        date_of_publication = None
     
     article = soup.find('div', class_='single-article-content')
     
-    try:
-        footer = " | ".join([x.text for x in soup.find('div', class_='single-article-ending__copy').find_all('p')])
-    except:
-        footer = None
     
+    try:   
+        author = re.search(r'^(.*?),', footer, re.MULTILINE).group(1).strip()
+    except:
+        author = None
+    
+    try:
+        category = " | ".join([x.text for x in soup.find('span', class_='post-written-by').find_all('a') if re.search(r'\/kategoria\/.*', x['href'])])
+    except:
+        category = None
+    
+    try:
+        genre = " | ".join([x.text for x in soup.find('span', class_='post-written-by').find_all('a') if re.search(r'\/gatunek\/.*', x['href'])])
+    except:
+        genre = None
+    
+    
+    article = soup.find('div', class_='entry-content')
     
     try:
         text_of_article = "".join([x.text for x in article.find_all('p')])
     except:
         text_of_article = None
-    
-    
-    try:
-        title_of_book = re.search(r'(?<=Tytuł\s\–\s).*', footer).group(0)
-    except:
-        title_of_book = None
-    
-    
-    
-    
-    try:
-        author_of_book = re.search(r'(?:Tekst(?: i ilustracje)?|Autor) – ([A-ZŁŚŻŹĆĄĘÓŃ][a-złśżźćąęóń]+(?: [A-ZŁŚŻŹĆĄĘÓŃ][a-złśżźćąęóń]+)*)', footer).group(1)
-    except:
-        author_of_book = None
-        
-        
-    try:
-        publishing = re.search(r'Wydawnictwo\s+[^|,\n]+(?:,\s*[^\|,\n]+)?(?:,\s*\d{4})?', footer).group(0)
-    except:
-        publishing = None
+
 
     try:
-        tags = " | ".join([x.text for x in soup.find('div', class_='single-article-categories').find_all('a')])
+        tags = " | ".join([x.text for x in soup.find('h6').find_all('a')])
     except:
         tags = None
 
@@ -138,12 +137,10 @@ def dictionary_of_article(article_link):
                              'Data publikacji': date_of_publication,
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
-                             'Autor dzieła': author_of_book,
-                             'Tytuł dzieła': title_of_book,
-                             'Adres wydawniczy': publishing,
+                             'Kategoria': category,
+                             'Gatunek': genre,
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
-                             'Stopka': footer, 
                              'Linki zewnętrzne': external_links,
                              'Zdjęcia/Grafika': True if [x['src'] for x in article.find_all('img')] else False,
                              'Filmy': True if [x['src'] for x in article.find_all('iframe')] else False,
@@ -157,18 +154,25 @@ def dictionary_of_article(article_link):
 #%% main
 months_urls = get_archive_links('https://zdaniemszota.pl/')
 
+articles_links = []
+with ThreadPoolExecutor() as excecutor:
+    list(tqdm(excecutor.map(get_articles_links, months_urls),total=len(months_urls)))
+
+without_duplicates = list(set(articles_links))
+
+
 all_results = []
 with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
+    list(tqdm(excecutor.map(dictionary_of_article, without_duplicates),total=len(without_duplicates)))
 
-with open(f'data/czytamaja_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/zdaniemszota_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)    
 
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji')
    
-with pd.ExcelWriter(f"data/czytamaja_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+with pd.ExcelWriter(f"data/zdaniemszota_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False)   
    
    
