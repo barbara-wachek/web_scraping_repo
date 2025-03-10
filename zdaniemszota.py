@@ -9,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from urllib.parse import urljoin
 import json
-from functions import date_change_format_long
 
 # from pydrive.auth import GoogleAuth
 # from pydrive.drive import GoogleDrive
@@ -18,7 +17,6 @@ from functions import date_change_format_long
 #%% def    
 def get_archive_links(link): 
     #Zbiera linki do archiwum (miesięcy)
-    # link = 'https://zdaniemszota.pl/'
     
     html_text_sitemap = requests.get(link).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
@@ -29,20 +27,16 @@ def get_archive_links(link):
     pattern = re.compile(r"/archiwum/\d{4}-\d{2}")
     
     months_links = [
-       li for year in years for li in year.find_all('li')  # Iterujemy przez każdy rok i jego elementy <li>
+       li for year in years for li in year.find_all('li')
        if li.find('a') and li.find('a').get('href') and pattern.search(li.find('a').get('href'))
     ]
-    # Pobieramy tylko same URL-e
     months_urls =  [urljoin(link, li.find('a')['href']) for li in months_links]
     
     return months_urls
 
-articles_links = []
+
 def get_articles_links(archive_link):
     format_link = 'https://zdaniemszota.pl'
-    
-    # archive_link = 'https://zdaniemszota.pl/archiwum/2025-01'
-    # archive_link = 'https://zdaniemszota.pl/archiwum/2024-04'
     
     html_text_sitemap = requests.get(archive_link).text
     soup = BeautifulSoup(html_text_sitemap, 'lxml')
@@ -67,8 +61,11 @@ def get_articles_links(archive_link):
     
     
 def dictionary_of_article(article_link):
-    article_link = 'https://zdaniemszota.pl/5268-wiersz-nocna-pora-ija-kiwa-osiem-lat-mowic-tlum-aneta-kaminska'
-    article_link = 'https://zdaniemszota.pl/4944-ksiazka-tygodnia-maggie-shipstead-wielki-krag'
+    # article_link = 'https://zdaniemszota.pl/5268-wiersz-nocna-pora-ija-kiwa-osiem-lat-mowic-tlum-aneta-kaminska'
+    # article_link = 'https://zdaniemszota.pl/4944-ksiazka-tygodnia-maggie-shipstead-wielki-krag'
+    # article_link = 'https://zdaniemszota.pl/3268-panna-doktor-sadowska-zapowiedz'
+    # article_link = 'https://zdaniemszota.pl/3263-fragment-ksiazki-panna-doktor-sadowska-mowi-idzcie-tlumnie-do-urn-wyborczych'
+    # article_link = 'https://zdaniemszota.pl/2368-premiera-ksiazki-lukier-malwiny-pajak'
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
@@ -85,7 +82,10 @@ def dictionary_of_article(article_link):
     
     try:   
         footer = soup.find('span', class_='post-written-by').text.strip()
-        date_of_publication = re.sub(r'(?s).*?(\d{2})\.(\d{2})\.(\d{4}).*', r'\3-\2-\1', footer).strip()
+        if re.search(r'\d{2}\.\d{2}\.\d{4}', footer):
+            date_of_publication = re.sub(r'(?s).*?(\d{2})\.(\d{2})\.(\d{4}).*', r'\3-\2-\1', footer).strip()
+        else:
+            date_of_publication = None
     except:
         date_of_publication = None
     
@@ -107,6 +107,11 @@ def dictionary_of_article(article_link):
     except:
         genre = None
     
+    try:
+        title_of_masterpiece = " | ".join(re.findall(r'\"[^"]*\"', title_of_article))
+    except:
+        title_of_masterpiece = None
+        
     
     article = soup.find('div', class_='entry-content')
     
@@ -123,7 +128,7 @@ def dictionary_of_article(article_link):
 
         
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|lapsusofil', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'zdaniemszota', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
         
@@ -139,11 +144,11 @@ def dictionary_of_article(article_link):
                              'Tytuł artykułu': title_of_article,
                              'Kategoria': category,
                              'Gatunek': genre,
+                             'Tytuł dzieła': title_of_masterpiece, 
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
                              'Linki zewnętrzne': external_links,
-                             'Zdjęcia/Grafika': True if [x['src'] for x in article.find_all('img')] else False,
-                             'Filmy': True if [x['src'] for x in article.find_all('iframe')] else False,
+                             'Filmy': True if article and article.find_all('iframe') else False,
                              'Linki do zdjęć': photos_links
                         }
         
@@ -159,7 +164,6 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_articles_links, months_urls),total=len(months_urls)))
 
 without_duplicates = list(set(articles_links))
-
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
