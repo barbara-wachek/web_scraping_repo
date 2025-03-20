@@ -66,6 +66,11 @@ def dictionary_of_article(article_link):
     # article_link = 'https://zdaniemszota.pl/3268-panna-doktor-sadowska-zapowiedz'
     # article_link = 'https://zdaniemszota.pl/3263-fragment-ksiazki-panna-doktor-sadowska-mowi-idzcie-tlumnie-do-urn-wyborczych'
     # article_link = 'https://zdaniemszota.pl/2368-premiera-ksiazki-lukier-malwiny-pajak'
+    # article_link = 'https://zdaniemszota.pl/570-marta-masada-swieto-trabek'
+    # article_link = 'https://zdaniemszota.pl/448-buforowanie-janusz-rudnicki-o-bombach-i-lejach-w-orwo-antologia'
+    # article_link = 'https://zdaniemszota.pl/37-iwona-chmielewska-kim-heekyoung-maum'
+    # article_link = 'https://zdaniemszota.pl/519-agata-tuszynska-loncia-jamnikarium'
+    # article_link = 'https://zdaniemszota.pl/310-buforowanie-wislawa-szymborska-kornel-filipowicz-najlepiej-w-zyciu-ma-twoj-kot'
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
@@ -111,7 +116,17 @@ def dictionary_of_article(article_link):
         title_of_masterpiece = " | ".join(re.findall(r'\"[^"]*\"', title_of_article))
     except:
         title_of_masterpiece = None
-        
+      
+    
+    author_of_masterpiece = None   
+    try:
+        if title_of_masterpiece:
+            author_of_masterpiece = re.search(r'^([\p{L}-]+(?:\s[\p{L}-]+)*(?:,\s*[\p{L}-]+(?:\s[\p{L}-]+)*)*)\s*,\s*".+?"|".+?"\s*,\s*([\p{L}-]+(?:\s[\p{L}-]+)*(?:,\s*[\p{L}-]+(?:\s[\p{L}-]+)*)*)$', title_of_article).group(1).replace('BUFOROWANIE - ', '').replace(',', " | ")
+        else: 
+            author_of_masterpiece = None
+    except:
+        author_of_masterpiece = None
+
     
     article = soup.find('div', class_='entry-content')
     
@@ -144,7 +159,8 @@ def dictionary_of_article(article_link):
                              'Tytuł artykułu': title_of_article,
                              'Kategoria': category,
                              'Gatunek': genre,
-                             'Tytuł dzieła': title_of_masterpiece, 
+                             'Autor utworu': author_of_masterpiece,
+                             'Tytuł utworu': title_of_masterpiece, 
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
                              'Linki zewnętrzne': external_links,
