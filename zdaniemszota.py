@@ -159,7 +159,7 @@ def dictionary_of_article(article_link):
                              'Tytuł artykułu': title_of_article,
                              'Kategoria': category,
                              'Gatunek': genre,
-                             'Autor utworu': author_of_masterpiece,
+                             'Autor książki': author_of_masterpiece,
                              'Tytuł utworu': title_of_masterpiece, 
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
