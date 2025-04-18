@@ -173,15 +173,27 @@ all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
+unique_articles = []
+seen_titles = set()
+
+for article in all_results:
+    title = article['Tytuł artykułu']
+    if title not in seen_titles:
+        unique_articles.append(article)
+        seen_titles.add(title)
+
+
+
 with open(f'data/biuletynpolonistyczny_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)    
+    json.dump(unique_articles, f, ensure_ascii=False)    
 
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji')
+df_no_duplicates = df.drop_duplicates(subset='Tytuł artykułu')
    
 with pd.ExcelWriter(f"data/biuletynpolonistyczny_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
-    df.to_excel(writer, 'Posts', index=False)   
+    df_no_duplicates.to_excel(writer, 'Posts', index=False)   
    
    
 
