@@ -20,10 +20,6 @@ def get_article_links(sitemap_link):
     return links
 
 def dictionary_of_article(article_link):
-    # article_link = 'http://www.coczytamkonstantemu.pl/2021/08/mapa-mordercy-tekst-i-ilustracje-jakob.html'
-    # article_link = 'http://www.coczytamkonstantemu.pl/2020/03/obce-swiadomosci-seria-kajtek-i-koko-w.html'
-    
-    
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
