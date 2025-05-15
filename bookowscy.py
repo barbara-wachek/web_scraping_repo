@@ -9,8 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 from functions import date_change_format_long
-# from pydrive.auth import GoogleAuth
-# from pydrive.drive import GoogleDrive
+
 
 
 #%% def    
@@ -22,8 +21,10 @@ def get_articles_links(link):
     
     
 def dictionary_of_article(article_link):
+    # article_link = 'https://bookowscy.wordpress.com/2017/08/19/puszcza-pamieta/'
+    # article_link = 'https://bookowscy.wordpress.com/2021/04/19/casus-czerwonego-kapturka/'
     
-    article_link = 'https://bookowscy.wordpress.com/2021/04/19/casus-czerwonego-kapturka/'
+    
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
         time.sleep(2)
@@ -32,8 +33,7 @@ def dictionary_of_article(article_link):
 
 
     try:
-        date = soup.find('span', class_='posted-on').text
-        date_of_publication = date_change_format_long(date)
+        date_of_publication = soup.find('time')['datetime'][:10]
     except:
         date_of_publication = None
     
@@ -51,7 +51,7 @@ def dictionary_of_article(article_link):
     article = soup.find('div', class_='entry-content')
     
     try:
-        text_of_article = article.text.replace("  ", " ").replace('\n', ' | ')
+        text_of_article = article.text.replace('\n', ' ').replace("  ", " ")
     except:
         text_of_article = None
         
@@ -61,7 +61,7 @@ def dictionary_of_article(article_link):
         tags = None
     
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'bartlebydeangola', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'bookowscy', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None 
         
@@ -93,30 +93,17 @@ all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, articles_links),total=len(articles_links)))
 
-with open(f'data/bartlebydeangola_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/bookowscy_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)    
 
 df = pd.DataFrame(all_results).drop_duplicates()
    
-with pd.ExcelWriter(f"data/bartlebydeangola_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+with pd.ExcelWriter(f"data/bookowscy_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False)   
    
    
 
-#%%Uploading files on Google Drive
 
-# gauth = GoogleAuth()           
-# drive = GoogleDrive(gauth)   
-      
-# upload_file_list = [f"data/dakowicz_{datetime.today().date()}.xlsx", f'data\\dakowicz_{datetime.today().date()}.json']
-# for upload_file in upload_file_list:
-# 	gfile = drive.CreateFile({'parents': [{'id': '19t1szTXTCczteiKfF2ukYsuiWpDqyo8f'}]})  
-# 	gfile.SetContentFile(upload_file)
-# 	gfile.Upload()  
-
-
-
-   
    
    
    
