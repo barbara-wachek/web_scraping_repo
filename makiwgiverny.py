@@ -163,7 +163,7 @@ def dictionary_of_article(article_link):
     
  
 #%% main
-all_article_links = get_article_links(['https://www.makiwgiverny.pl/sitemap.xml?page=1', 'https://www.makiwgiverny.pl/sitemap.xml?page=2'])
+all_article_links = get_article_links('http://obszaryprzepisane.com/post-sitemap.xml')
 
 
 all_results = []
