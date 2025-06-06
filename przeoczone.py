@@ -65,7 +65,7 @@ def dictionary_of_article(article_link):
         author = None
 
     try:
-        tags = [x.text for x in soup.find('div', class_='taxonomy-category wp-block-post-terms').find_all('a')]
+        tags = " | ".join([x.text for x in soup.find('div', class_='taxonomy-category wp-block-post-terms').find_all('a')])
     except:
         tags = None
 
@@ -84,7 +84,7 @@ def dictionary_of_article(article_link):
         
     
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'obszaryprzepisane', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'przeoczone', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
         
