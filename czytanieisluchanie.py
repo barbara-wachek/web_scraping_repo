@@ -22,8 +22,8 @@ def get_article_links(sitemap_link):
 
 def dictionary_of_article(article_link):
     # article_link = 'https://czytanieisluchanie.blogspot.com/2025/05/obszerne-obserwowanie.html'
-    # article_link = 'https://czytanieisluchanie.blogspot.com/2025/04/kwestia-gramatyki.html'
-    article_link = 'https://czytanieisluchanie.blogspot.com/2024/03/w-srodku-byocicho.html'
+    #article_link = 'https://czytanieisluchanie.blogspot.com/2025/04/kwestia-gramatyki.html'
+    # article_link = 'https://czytanieisluchanie.blogspot.com/2024/03/w-srodku-byocicho.html'
     # article_link = 'https://czytanieisluchanie.blogspot.com/2022/11/przymknijcie-oczy-otworzcieserca.html'
     # article_link = 'https://czytanieisluchanie.blogspot.com/2019/08/woski-sen.html'
     
@@ -67,80 +67,66 @@ def dictionary_of_article(article_link):
         text_of_article = None
     
     
-    pattern = re.compile(
-    r"""(?x)                                    # tryb wieloliniowy z komentarzami
-    (
-        [„"”]?[A-ZĄĆĘŁŃÓŚŹŻ][^.!?\n]{3,150}?     # tytuł zaczynający się wielką literą (z opcjonalnym cudzysłowem)
-        [.!?,]\s*                                # zakończenie tytułu i separator
-        (?:[^.\n]*\.\s*)*?                       # kolejne zdania – autor, przekład, wydawnictwo itp.
-        \d{1,2},?\d{0,2}/10                      # ocena w formacie np. 10/10 lub 7,5/10
-    )
-    """,
-    flags=re.UNICODE
-)
-    
-    
     try:
-        matches = pattern.findall(text_of_article)
-        for match in matches:
-            book_description = match.strip()
-            
+        book_description_end = re.search(r"\d{4}\.?", text_of_article).end()
+        book_description = text_of_article[:book_description_end]
     except:
         book_description = None
-        
-        
+
+    author_of_book = None
     if book_description:
-        
-        pattern = re.compile(
-            r"""(?x)
-            ^\s*
-            [„"”]?
-            (?P<title>[^".„”]+?)       # tytuł: do pierwszej kropki/cudzysłowu
-            [".„”]?[.,]?\s+
-            (?P<author>[^.,\n]+?)      # autor: do pierwszej kropki/przecinka
-            [.,]                       # separator po autorze
-            """
-        )
-        
-        match = pattern.search(book_description)
-        
-        if match:
-            try:
-                title_of_book =  match.group("title").strip()
-            except:
-                title_of_book = None
+        patterns = [
+            # 1. Tytuł w cudzysłowie, potem autor i liczba stron
+            r'["”]{1,2}.*?["”]{1,2}\.?\s*([A-ZŻŹĆĄŚĘŁÓŃ][^,\.]+?),\s*\d+\s*stron',
+    
+            # 2. Autor po ostatniej kropce w tytule (wielokrotne zdania w tytule)
+            r'\.\s*([A-ZŻŹĆĄŚĘŁÓŃ][^,]+?),\s*\d+\s*stron',
+    
+            # 3. Po cudzysłowie i kropce (np. „Tytuł”. Autor.)
+            r'[”"]\s*\.?\s*([A-ZŻŹĆĄŚĘŁÓŃ][^.,;\(\)]+?)(?=\.\s*(Przekład|tłum|redakcja|Wydawnictwo|$))',
+    
+            # 4. Po tytule zakończonym kropką (np. Tytuł. Autor.)
+            r'^[^\.]+?\.\s*([A-ZŻŹĆĄŚĘŁÓŃ][^.,;\(\)]+?)(?=\.\s*(Przekład|tłum|redakcja|Wydawnictwo|$))',
+    
+            # 5. Po myślniku (np. Tytuł - Autor, ...)
+            r'-\s*([A-ZŻŹĆĄŚĘŁÓŃ][^,;\.\(\)]+)',
+    
+            # 6. Po tytule z nawiasem (np. Tytuł (język), Autor.)
+            r'\)\s*,?\s*([A-ZŻŹĆĄŚĘŁÓŃ][^.,;\(\)]+?)(?=\.\s*(Przekład|tłum|redakcja|Wydawnictwo|$))',
+    
+            # 7. Po kropce, przed „tłumacz” lub „redakcją” (np. Autor. tłumacz...)
+            r'([A-ZŻŹĆĄŚĘŁÓŃ][^.,;\(\)]+?)\.\s*(tłum|redakcja)',
+    
+            # 8. Autor przed przecinkiem i liczbą stron (poprawiony, aby uwzględnić polskie znaki i różne znaki)
+            r'([A-ZŻŹĆĄŚĘŁÓŃ][\w\s\-\.’’]+?),\s*\d+\s*stron[ay]?',
             
+            # NOWE wzorce - dopasowanie autora po tytule zakończonym kropką lub przecinkiem
+            # 1. Tytuł. Autor. Wydawnictwo, Miasto Rok.
+            r'^[^.,\n]+[.,]\s*([A-ZŻŹĆĄŚĘŁÓŃ][\w\s\.\-’\'`]+)\.\s*[A-ZĄĆĘŁŃÓŚŹŻ].*?\d{4}',
+            
+            # 2. Tytuł, Autor. Wydawnictwo, Miasto Rok.
+            r'^[^.,\n]+,\s*([A-ZŻŹĆĄŚĘŁÓŃ][\w\s\.\-’\'`]+)\.\s*[A-ZĄĆĘŁŃÓŚŹŻ].*?\d{4}',
+            
+            # 3. „Tytuł”, Autor. Wydawnictwo ...
+            r'[”"]\s*,\s*([A-ZŻŹĆĄŚĘŁÓŃ][\w\s\.\-’\'`]+)\.\s*[A-ZĄĆĘŁŃÓŚŹŻ].*?\d{4}',
+                        
+            
+        ]
+    
+        for pattern in patterns:
             try:
-                author_of_book = match.group("author").strip()
+                match = re.search(pattern, book_description)
+                if match:
+                    author_of_book = match.group(1).strip()
+                    break
             except:
-                author_of_book = None
+                continue
+
 
         
         
-        
-    
     try:
-        title_of_book = " | ".join(re.findall(r"(?P<tytul>.+?)\s+-\s+[A-ZŻŹĆŁÓŚŃ][a-ząćęłńóśżź]+(?:\s+[A-ZŻŹĆŁÓŚŃ][a-ząćęłńóśżź]+)+"
-, text_of_article))
-    except:
-        title_of_book = None
-        
-    try: 
-        author_of_book = " | ".join(re.search(r'(?:[-–.]\s+)(?P<autor>[A-ZŻŹĆŁÓŚŃ][a-ząćęłńóśżź]+(?:\s+[A-ZŻŹĆŁÓŚŃ][a-ząćęłńóśżź]+)+)', text_of_article))
-    except:
-        author_of_book = None
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|coczytamkonstantemu', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'blogger|blogspot|czytanieisluchanie', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
         
@@ -153,8 +139,8 @@ def dictionary_of_article(article_link):
                              'Data publikacji': date_of_publication,
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
+                             'Opis książki': book_description,
                              'Autor książki': author_of_book,
-                             'Tytuł książki': title_of_book, 
                              'Tekst artykułu': text_of_article,
                              'Tagi': tags,
                              'Linki zewnętrzne': external_links,
@@ -180,14 +166,11 @@ df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=True)
 
 
-with open(f'czytanieisluchanie_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/czytanieisluchanie_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)    
 
-with pd.ExcelWriter(f"czytanieisluchanie_{datetime.today().date()}.xlsx", engine='xlsxwriter', options={'strings_to_urls': False}) as writer:    
-    df.to_excel(writer, 'Posts', index=False, encoding='utf-8')   
-    writer.save()     
-   
-
+with pd.ExcelWriter(f"data/czytanieisluchanie_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+    df.to_excel(writer, 'Posts', index=False)     
 
 
    
