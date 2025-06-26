@@ -12,6 +12,38 @@ import json
 
 
 #%% def    
+#Raczej bedzie skrobanie najpierw linków ze strony razem z tytulami i autorem. Jak wchodzi sie do srodka artykulu to stamtad juz trudno pozyskac te dane. Jest chaos. 
+
+issues_links = ['https://trytytkapismo.pl/numer-5/', 'https://trytytkapismo.pl/numer-4/', 'https://trytytkapismo.pl/numer-3/', 'https://trytytkapismo.pl/numer-2/', 'https://trytytkapismo.pl/numer-1/']
+
+for x in issues_links: 
+    x = 'https://trytytkapismo.pl/numer-5/'
+    html_text = requests.get(x).text
+    while 'Error 503' in html_text:
+       time.sleep(2)
+       html_text = requests.get(x).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    
+    article_block_elements = [x.find('a') for x in soup.find_all('div', class_='elementor-widget-container')]
+    
+    list_of_dicts = []
+
+    for element in article_block_elements:
+        if element:
+            article_link = element.get('href')
+            title_of_article = element.text
+            dictionary = {'Link': article_link,
+                          'Title': title_of_article}
+            list_of_dicts.append(dictionary)
+    
+#Iterować  po kazdym z tych wyzej linkow i pozyskac slownik zlozony z linku do artykulu, tytulu i autora
+
+
+
+
+
+
+
 
 def get_article_links(sitemap_link):
 
@@ -22,9 +54,9 @@ def get_article_links(sitemap_link):
 
 def dictionary_of_article(article_link):
 
-    # article_link = 'https://www.zakladmagazyn.pl/post/wolny-hamkało-kawalec-konieczny-performens-numeryczność'
-    # article_link = 'https://www.zakladmagazyn.pl/post/justyna-wysocka-zestaw-dwóch-wierszy'
-    # article_link = 'https://www.zakladmagazyn.pl/post/hanna-janczak-jeden-wiersz'
+    # article_link = 'https://trytytkapismo.pl/poezja/pawel-nowakowski-trzy-wiersze/'
+    # article_link = 'https://trytytkapismo.pl/szybka-trytka-biezace/krzysztof-katkowski-piec-wierszy/'
+    article_link = 'https://trytytkapismo.pl/poezja/trzy-wiersze-z-ksiazki-sekstans-milosz-fleszar/'
     
     html_text = requests.get(article_link).text
     while 'Error 503' in html_text:
@@ -34,7 +66,7 @@ def dictionary_of_article(article_link):
     
 
     try:
-        title_of_article = soup.find('h1', class_='H3vOVf').text.strip()
+        title_of_article = [[y.find('strong') for y in x.find_all('p')] for x in soup.find_all('div', class_='elementor-widget-container')]
     except: 
         title_of_article = None
         
@@ -122,7 +154,7 @@ def dictionary_of_article(article_link):
     
  
 #%% main
-article_links = get_article_links('https://www.zakladmagazyn.pl/blog-posts-sitemap.xml')
+article_links = get_article_links('https://trytytkapismo.pl/page-sitemap.xml')
    
 all_results = []
 with ThreadPoolExecutor() as excecutor:
