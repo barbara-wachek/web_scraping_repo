@@ -21,7 +21,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 #%% def  
 
 def get_issue_links(link):
-    link = 'https://www.magazyn-suburbia.com/archive'
+    # link = 'https://www.magazyn-suburbia.com/archive'
     
     html_text = requests.get(link).text
     soup = BeautifulSoup(html_text, 'lxml')
@@ -29,101 +29,57 @@ def get_issue_links(link):
   
     return links
 
-
+# issue_link = 'https://www.magazyn-suburbia.com/archive/kopia-wydanie-7-9-24-10'
 
 def get_article_links(issue_link):
-    # Konfiguracja przeglądarki
+    #Nie moze byc headless, bo nie wczytuje wszystkich linkow
     options = Options()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
-
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(issue_link)
+    time.sleep(2)
 
-    # Scrollowanie w dół, żeby załadować wszystkie elementy
-    scroll_pause_time = 2
+    # ⬇️ Scrolluj na dół, żeby załadować wszystkie artykuły
     last_height = driver.execute_script("return document.body.scrollHeight")
-
     while True:
-        # Przewiń na sam dół
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-        # Czekaj na załadowanie nowych elementów
-        time.sleep(scroll_pause_time)
-
-        # Sprawdź nową wysokość strony
+        time.sleep(2)  # daj czas na załadowanie
         new_height = driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
-            break  # Koniec scrollowania
+            break
         last_height = new_height
 
-    # Poczekaj, aż pojawi się ostatni artykuł (opcjonalne, bardziej niezawodne)
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[href*='/post/']"))
-        )
-    except Exception as e:
-        print("Timeout while waiting for articles to load:", e)
-
-    soup = BeautifulSoup(driver.page_source, "lxml")
+    # ⬇️ Parsuj HTML po scrollowaniu
+    soup = BeautifulSoup(driver.page_source, 'lxml')
     driver.quit()
 
-    links = [
-        a.get("href") for a in soup.find_all("a")
-        if a.get("href") and re.match(r'https://www\.magazyn-suburbia\.com/post/.*', a.get("href"))
-    ]
-
-    return list(set(links))  # usunięcie duplikatów, jeśli są
-
-# Przykład użycia:
-issue_url = "https://www.magazyn-suburbia.com/archive/kopia-wydanie-3-25-16"
-lista = get_article_links(issue_url)
+    links = [a['href'] for a in soup.find_all('a', href=True)
+             if re.match(r'https://www\.magazyn-suburbia\.com/post/.*', a['href'])]
+    
+    return list(set(links))
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def get_article_links(issue_link, issue):
-    issue = 'Wydanie 4/25 (17)'
-    issue_link = 'https://www.magazyn-suburbia.com/archive/kopia-wydanie-3-25-16'
-    html_text = requests.get(issue_link).text
+def dictionary_of_article(article):
+    
+    article_link = article['Link']
+    issue = article['Numer']
+    
+    # article_link = 'https://www.magazyn-suburbia.com/post/miłka-o-malzahn-dziennik-zmian-8'
+    # issue = 'Wydanie 6/24(9)'
+    
+    # # article_link = 'https://www.magazyn-suburbia.com/post/ola-kołodziejek-trzy-wiersze'
+    # # issue = 'Wydanie 7-9/24(10)'
+    
+    # article_link = 'https://www.magazyn-suburbia.com/post/sergio-raimondi-trzy-wiersze'
     
     
-    soup = BeautifulSoup(html_text, 'lxml')
-    links = [e.get('href') for e in soup.find_all('a') if re.match(r'https\:\/\/www\.magazyn\-suburbia\.com\/post\/.*', e.get('href'))]
-    return links
-
-
-
-
-def dictionary_of_article(article_link):
-    
-    # article_link = 'https://www.magazyn-suburbia.com/post/wojciech-brzoska-cztery-wiersze'
-    # article_link = 'https://www.magazyn-suburbia.com/post/pierre-vinclair-wiersz'
-    # article_link = 'https://www.magazyn-suburbia.com/post/marcin-mielcarek-skoczek-fragment'
-    # article_link = 'https://www.magazyn-suburbia.com/post/mary-noonan-cztery-wiersze'
-    article_link = 'https://www.magazyn-suburbia.com/post/ewa-kłobuch-pięć-wierszy'
-
     response = requests.get(article_link)
 
     while 'Error 503' in response.text:
@@ -136,30 +92,11 @@ def dictionary_of_article(article_link):
     soup = BeautifulSoup(response.text, 'lxml')
     
     
-    author = 'Maja Kupiszewska'
-
     try:
-        title_of_article = soup.find('h3', class_='post-title entry-title').text.strip()
+        title_of_article = soup.find('h1', class_='H3vOVf').text.strip()
     except: 
         title_of_article = None
         
-        
-    try:
-        date_of_publication = soup.find('time', class_='published')['datetime'][:10]
-    except:
-        date_of_publication = None
-
-    try:
-        category = " | ".join([x.text for x in soup.find('div', class_='post-sidebar-item post-sidebar-labels').find_all('a')])
-    except:
-        category = None
-        
-        
-    try:
-        tags = " | ".join([x.text for x in soup.find('span', class_='byline post-labels').find_all('a')])
-    except:
-        tags = None
-
 
         
     try:
@@ -191,55 +128,42 @@ def dictionary_of_article(article_link):
             )
         """
         match = re.search(pattern, title_of_article.strip(), re.VERBOSE)
-        author_of_book = match.group(0) if match else None
+        author = match.group(0) if match else None
+        author = author.strip()
     except:
-        author_of_book = None
+        author = None
         
-        
-    try:
-        title_of_book = " | ".join(re.findall(r'[„"](.*?)["”]', title_of_article))
+    try:   
+        title_of_masterpiece = " | ".join([x.text.strip() for x in soup.find_all('strong') if x.text.strip() != author])
     except:
-        title_of_book = None
-        
-    if title_of_book == None or title_of_book == '': 
-        try:
-            pattern = rf"^(.*?),\s*{re.escape(author_of_book)}(?:,.*)?$"
-            match = re.match(pattern, title_of_article)
-            if match:
-                title_of_book = match.group(1)
-        except:
-            title_of_book = None
-
+        title_of_masterpiece = None
     
-    article = soup.find('div', class_='post-body-container')
+    article_div = soup.find('div', class_='hM08C')
     
-    if article: 
-        text_of_article = article.text.replace('\n', ' ').replace('\xa0', ' ').replace('  ', ' ').strip()
+    if article_div: 
+        text_of_article = article_div.text.replace('\n', ' ').replace('\xa0', ' ').replace('  ', ' ').strip()
     else:
         text_of_article = None
     
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'wielkibuk', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article_div.find_all('a')] if not re.findall(r'suburbia', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
         
     try: 
-        photos_links = ' | '.join([x['src'] for x in article.find_all('img')])  
+        photos_links = ' | '.join([x['src'] for x in article_div.find_all('img')])  
     except (AttributeError, KeyError, IndexError):
         photos_links = None
 
     dictionary_of_article = {'Link': article_link,
-                             'Data publikacji': date_of_publication,
+                             'Numer czasopisma': issue,
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
-                             'Autor książki': author_of_book,
-                             'Tytuł książki': title_of_book,
+                             'Tytuł utworu': title_of_masterpiece,
                              'Tekst artykułu': text_of_article,
-                             'Kategoria': category,
-                             'Tags': tags,
                              'Linki zewnętrzne': external_links,
-                             'Zdjęcia/Grafika': True if [x.get('src') for x in article.find_all('img')] else False,
-                             'Filmy': True if [x.get('src') for x in article.find_all('iframe')] else False,
+                             'Zdjęcia/Grafika': bool(article_div and article_div.find_all('img')),
+                             'Filmy': bool(article_div and article_div.find_all('iframe')),
                              'Linki do zdjęć': photos_links}
         
 
@@ -250,25 +174,40 @@ def dictionary_of_article(article_link):
  
 #%% main
 
-article_links = get_article_links('https://www.magazyn-suburbia.com/blog-posts-sitemap.xml')
+# article_links = get_article_links('https://www.magazyn-suburbia.com/blog-posts-sitemap.xml')
 
 issue_links = get_issue_links('https://www.magazyn-suburbia.com/archive')
+
+article_data = []  # tu będą słowniki z linkiem i numerem czasopisma
+
+for issue, link in tqdm(issue_links):
+    try:
+        links = get_article_links(link)
+        for x in links:
+            dictionary_of_article = {
+                'Link': x,
+                'Numer': issue
+            }
+            article_data.append(dictionary_of_article)
+    except Exception as e:
+        print(f"Błąd dla {issue} / {link}: {e}")
+
 
 
 all_results = []
 with ThreadPoolExecutor() as excecutor:
-    list(tqdm(excecutor.map(dictionary_of_article, all_article_links),total=len(all_article_links)))
+    list(tqdm(excecutor.map(dictionary_of_article, article_data),total=len(article_data)))
    
 
 df = pd.DataFrame(all_results).drop_duplicates()
-df = df.sort_values('Numer', ascending=True)
+
 
 json_data = df.to_dict(orient='records')
 
-with open(f'data/tlenliteracki_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/magazynsuburbia_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(json_data, f, ensure_ascii=False)    
 
-with pd.ExcelWriter(f"data/tlenliteracki_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+with pd.ExcelWriter(f"data/magazynsuburbia_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False)     
 
 
