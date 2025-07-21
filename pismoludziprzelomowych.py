@@ -21,19 +21,19 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 #%% def    
 
-def get_article_links(issue):
+# def get_article_links(issue):
     
-    issue = ('https://pismoludziprzelomowych.blogspot.com/p/najnowszy-numer-czerwieclipiec-2016.html', 'czerwiec/lipiec 2016')
+#     # issue = ('https://pismoludziprzelomowych.blogspot.com/p/najnowszy-numer-czerwieclipiec-2016.html', 'czerwiec/lipiec 2016')
     
-    issue_link = issue[0]
-    issue = issue[1]
+#     issue_link = issue[0]
+#     issue = issue[1]
         
-    html_text = requests.get(issue_link).text
-    soup = BeautifulSoup(html_text, 'lxml')
-    links = [x.text for x in soup.find('div', class_='article hentry ').find_all('a') if re.match(r'^https\:\/\/pismoludziprzelomowych\.blogspot\.com\/p\/\.*', x.text)]
-    article_links.extend(links)
+#     html_text = requests.get(issue_link).text
+#     soup = BeautifulSoup(html_text, 'lxml')
+#     links = [x.text for x in soup.find('div', class_='article hentry ').find_all('a') if re.match(r'^https\:\/\/pismoludziprzelomowych\.blogspot\.com\/p\/\.*', x.text)]
+#     article_links.extend(links)
         
-    return article_links
+#     return article_links
 
 
 def get_article_links(issue):
@@ -59,7 +59,7 @@ def get_article_links(issue):
         soup = BeautifulSoup(html, 'lxml')
 
         links = [
-            {'Link' : a.get('href'), 'Numer': issue_name} for a in soup.find('div', class_='article hentry').find_all('a')
+            (a.get('href'), issue_name) for a in soup.find('div', class_='article hentry').find_all('a')
             if re.match(r'https?\:\/\/pismoludziprzelomowych\.blogspot\.com\/p\/.*', a.get('href'))
         ]
         
@@ -77,54 +77,53 @@ def get_article_links(issue):
 
 #DOKONCZYC
 
-def dictionary_of_article(article_link):  
+def dictionary_of_article(article):  
     
-    # article_link = 
+    article_link, issue = article
     
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    response = requests.get(article_link, headers=headers, allow_redirects=False)
-    response.encoding = 'utf-8'  # wymuś UTF-8
+    # article_link = 'http://pismoludziprzelomowych.blogspot.com/p/blog-page_56.html'
+    # article_link = 'http://pismoludziprzelomowych.blogspot.com/p/rafa-rozewicz_25.html'
+    # article_link = 'http://pismoludziprzelomowych.blogspot.com/p/proza-zycia-maja-stasko.html'
     
-    while 'Error 503' in response:
-        time.sleep(2)
-        response = requests.get(article_link, headers=headers, allow_redirects=False)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
+    options = Options()
+    options.add_argument("--headless")  # usuń, jeśli chcesz widzieć przeglądarkę
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
+
+
+    driver.get(article_link)
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, 'body > div.viewitem-panel > div > div.viewitem-inner > div > div > div.article-header > h1'))
+    )
+
+    html = driver.page_source
+    soup = BeautifulSoup(html, 'lxml')
     
     try:
-        date_of_publication = soup.find('time', class_='published')['datetime'][:10]
+        title_of_article = soup.find('h1', class_='title entry-title').get_text(strip=True)
     except:
-        date_of_publication = None   
-    
+        title_of_article = None
+  
     try:
-        author = soup.find('span', class_='author-name').text
+        author = re.search(r'(.*\: )(.*)', title_of_article).group(2)
     except:
         author = None
 
-    
-    try:
-        title_of_article = soup.find('h1', class_='entry-title').text
-    except: 
-        title_of_article = None
-
-
-
-    article = soup.find('div', class_='entry-content')
+    article = soup.find('div', class_='article-content entry-content')
     
     try:
         text_of_article = article.get_text(separator=" ", strip=True).replace('\n', '')
     except:
         text_of_article = None
     
-    try:
-        category = " | ".join([x.text for x in soup.find('span', class_="cat-links").find_all('a')])
-    except:
-        category = None
+    # try:
+    #     title_of_piece = [x.text for x in article.find_all('span')]
+    # except:
+    #     title_of_piece = None
         
-    try:
-        tags = " | ".join([x.text for x in soup.find('span', class_='tags-links').find_all('a')])
-    except:
-        tags = None
         
     try:
         external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'pismoludziprzelomowych', x)])
@@ -132,22 +131,23 @@ def dictionary_of_article(article_link):
         external_links = None
         
 
-
+        
     dictionary_of_article = {'Link': article_link,
-                             'Data publikacji': date_of_publication,
+                             'Numer': issue,
                              'Autor': author,
                              'Tytuł artykułu': title_of_article,
                              'Tekst artykułu': text_of_article,
-                             'Kategoria': category,
-                             'Tagi': tags, 
                              'Linki zewnętrzne': external_links,
                              'Zdjęcia/Grafika': True if article and article.find_all('img') else False,
                              'Filmy': True if article and article.find_all('iframe') else False
                              }
 
     all_results.append(dictionary_of_article)
-    
-    
+    driver.quit()
+
+
+        
+ 
  
 #%% main
 
@@ -159,23 +159,33 @@ with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(get_article_links, issue_links),total=len(issue_links)))
 
 
-
-
 all_results = []
 with ThreadPoolExecutor() as excecutor:
     list(tqdm(excecutor.map(dictionary_of_article, article_links),total=len(article_links)))
    
    
 df = pd.DataFrame(all_results).drop_duplicates()
-df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
-df = df.sort_values('Data publikacji', ascending=True)
+df_test = df.copy()
 
 
-with open(f'data/pismoludziprzelomowych_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
-    json.dump(all_results, f, ensure_ascii=False)    
+#dodanie kolumny forma/gatunek na podstawie Tytuł artykułu
+
+def przypisz_forme(tytul):
+    if 'wiersz' in tytul.lower():
+        return 'wiersz'
+    elif 'proza' in tytul.lower():
+        return 'proza'
+    else:
+        return None
+
+# Tworzenie nowej kolumny
+df_test['forma/gatunek'] = df_test['Tytuł artykułu'].apply(przypisz_forme)
+
+
+df_test.to_json(f'data/pismoludziprzelomowych_{datetime.today().date()}.json', orient='records', force_ascii=False, indent=2)
 
 with pd.ExcelWriter(f"data/pismoludziprzelomowych_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
-    df.to_excel(writer, 'Posts', index=False)     
+    df_test.to_excel(writer, 'Posts', index=False)     
 
 
    
