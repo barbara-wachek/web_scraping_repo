@@ -46,7 +46,7 @@ def get_article_links(link):
             response = requests.get(page_link, headers=headers, allow_redirects=True)
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        links = [{x.a.get('href'):category} for x in soup.find_all('article')]
+        links = [(x.a.get('href'), category) for x in soup.find_all('article')]
         
         article_links.extend(links)
         
@@ -56,6 +56,8 @@ def get_article_links(link):
        
 
 def dictionary_of_article(article_link, category):    
+    
+    # article_link = 'https://kulturaupodstaw.pl/odciecie-od-wlasnych-emocji-rozmowa-z-arkiem-kowalikiem/'
     
     headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
@@ -71,44 +73,43 @@ def dictionary_of_article(article_link, category):
         response = requests.get(article_link, headers=headers, allow_redirects=False)
     soup = BeautifulSoup(response.text, 'html.parser')
     
+    josefin_elements = soup.find_all('p', class_='josefin post-info')
     
     try:
-        date_of_publication = soup.find('time')['datetime'][:10]
+        new_date = " | ".join([x.text[13:] for x in josefin_elements if x.text.startswith('Opu')]) 
+        date_of_publication = date_change_format_short(new_date)
     except:
         date_of_publication = None
     
+    
     try:
-        author = " | ".join([x.get_text(strip=True) for x in soup.find('div', class_='td-post-author-name').find_all('a')])
+        author = " | ".join([x.get_text(strip=True)[7:] for x in josefin_elements if x.text.startswith('tekst')])
     except:
         author = None
     
 
     try:
-        title_of_article = soup.find('h1', class_='entry-title').text
+        title_of_article = soup.find('h1').text
     except: 
         title_of_article = None
         
-    try:
-        category = " | ".join([x.text for x in soup.find('li', class_='entry-category').find_all('a')])
-    except:
-        category = None
         
+    
+    article = soup.find('div', class_=re.compile(r'^single-post'))
+    
     try:
-        tags = " | ".join([x.text for x in soup.find('div', class_='td-post-source-tags').find_all('a')])
+        tags = " | ".join([x.text for x in article.find_all('a') if re.search(r'^https\:\/\/kulturaupodstaw\.pl\/tag\/.*', x.get('href'))])
     except:
         tags = None
         
-        
-    
-    article = soup.find('div', class_='td-post-content tagdiv-type')
     
     try:
-        text_of_article = " ".join([x.get_text(strip=True) for x in article.find_all('p')])
+        text_of_article = article.get_text(strip=True)
     except:
         text_of_article = None
         
     try:
-        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'przegladdziennikarski', x)])
+        external_links = ' | '.join([x for x in [x['href'] for x in article.find_all('a')] if not re.findall(r'kulturaupodstaw', x)])
     except (AttributeError, KeyError, IndexError):
         external_links = None
         
@@ -131,9 +132,7 @@ def dictionary_of_article(article_link, category):
                              'Linki do zdjęć': photos_links
                              }
     
-    all_results.append(dictionary_of_article)
-    
-    return all_results
+    return dictionary_of_article
  
 #%% main
 
@@ -144,33 +143,26 @@ article_links = []
 with ThreadPoolExecutor() as executor:
     list(tqdm(executor.map(get_article_links, list_of_category_pages),total=len(list_of_category_pages)))
 
-
+# pairs = [(list(d.keys())[0], list(d.values())[0]) for d in article_links]
 
 all_results = []
 with ThreadPoolExecutor() as executor:
-    results = list(tqdm(executor.map(lambda args: dictionary_of_article(*args),
-                                     article_links),
-                        total=len(article_links)))
-    all_results.extend(results)
-
-
-
-
-
-
-# all_results = []   
-# with ThreadPoolExecutor() as executor:
-#     list(tqdm(executor.map(dictionary_of_article, article_links),total=len(article_links)))
+    all_results = list(
+        tqdm(
+            executor.map(lambda args: dictionary_of_article(*args), article_links),
+            total=len(article_links)
+        )
+    )
 
   
 df = pd.DataFrame(all_results).drop_duplicates()
 df["Data publikacji"] = pd.to_datetime(df["Data publikacji"]).dt.date
 df = df.sort_values('Data publikacji', ascending=True)
 
-with open(f'data/przegladdziennikarski_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
+with open(f'data/kulturaupodstaw_{datetime.today().date()}.json', 'w', encoding='utf-8') as f:
     json.dump(all_results, f, ensure_ascii=False)    
 
-with pd.ExcelWriter(f"data/przegladdziennikarski_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
+with pd.ExcelWriter(f"data/kulturaupodstaw_{datetime.today().date()}.xlsx", engine='xlsxwriter') as writer:    
     df.to_excel(writer, 'Posts', index=False)     
 
 
