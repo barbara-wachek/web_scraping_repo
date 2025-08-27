@@ -1,35 +1,38 @@
-## [Dokumentacja](https://docs.google.com/spreadsheets/d/1-g_pgkvRIhBSKBENu_5HhRCMsHatv-eux3U_ERGHZG0/edit#gid=0)
-## [Folder z pobranymi rekordami](https://drive.google.com/drive/folders/19t1szTXTCczteiKfF2ukYsuiWpDqyo8f)
+# 📚 Skrypty do ekstrakcji i przetwarzania danych bibliograficznych
 
-## Linki do scrapowanych stron:
-1. https://krytycznymokiem.blogspot.com/    
-2. http://bernadettadarska.blogspot.com/
-3. http://czytamcentralnie.blogspot.com/
-4. http://poecipogodzinach.blogspot.com/
-5. http://tomaszbialkowski.blogspot.com/
-6. http://dyskretnyurokdrobiazgow.blogspot.com/
-7. https://pgajda.blogspot.com/
-8. https://bialafabryka.blogspot.com/
-9. http://bezprzeginania.blogspot.com/
-10. https://komnen-kastamonu.blogspot.com/
-11. http://intimathule.blogspot.com/
-12. https://jerzysosnowski.pl/
-13. http://www.afiszteatralny.pl/
-14. https://afront.org.pl/
-15. https://szelestkartek.pl/
-16. https://www.pilipiuk.com/
-17. https://czaskultury.pl/
-18. https://alicjarubczak.wordpress.com/
-19. http://artpapier.com/
-20. https://audycjekulturalne.pl/
-21. https://www.biuroliterackie.pl/
-22. https://booklips.pl/
-23. https://culture.pl/pl
-24. https://krzysztofjaworski.blogspot.com/ (dwa pliki)
-25. https://www.zamekczyta.pl/
-26. https://pisarze.pl/
-27. http://chalwazwyciezonym.blogspot.com/
-28. https://kochampolskiekino.pl/
-29. https://film.org.pl/
-30. http://cultureave.com/
-31. https://bylamwidzialam.pl/
+Repozytorium **web_scraping_repo** zawiera zestaw skryptów, których celem jest **automatyczne pobieranie danych ze stron internetowych** - blogów, serwisów i portali literackich (lub związanych z literaturą) - oraz **przetwarzanie ich do formy tabelarycznej**.  
+Każdy wiersz wynikowej tabeli odpowiada jednemu rekordowi bibliograficznemu.
+
+Skrypty powstają w ramach projektu: **„Bibliografia polskiej internetowej kultury cyfrowej wraz z katalogiem źródeł i archiwum. Uzupełnienie »Polskiej Bibliografii Literackiej«”** (NPRH/DN/SP/495736/2021/10), realizowanego w latach **2023–2026**. Wynikiem projektu będzie kolekcja **iPBL**, która zostanie udostępniona na stronach [**Polskiej Bibliografii Literackiej**](https://pbl.ibl.waw.pl/) oraz [**Europejskiej Bibliografii Literackiej**](https://literarybibliography.eu/).
+
+---
+
+## 📂 Struktura repozytorium
+- `scripts/` – skrypty do web scrapingu i przetwarzania danych (nazwy plików odpowiadają nazwom scrapowanych stron),  
+- `data/` – pliki wynikowe w formatach `.json`, `.xlsx` (udostępniane tylko wewnętrznie)  
+- `functions/` – funkcje pomocnicze używane przez skrypty,  
+
+---
+
+### 🔹 Główne biblioteki Python używane w skryptach
+
+#### Do pobierania danych z internetu
+- `requests` – pobieranie stron WWW
+- `selenium` – automatyzacja przeglądarki i obsługa dynamicznych stron
+
+#### Do parsowania i analizy HTML
+- `beautifulsoup4` (`bs4`) – parsowanie HTML i ekstrakcja danych
+- `lxml` – parser HTML/XML
+- `regex` – zaawansowane dopasowywanie wzorców w tekstach
+
+#### Do przetwarzania danych
+- `pandas` – tworzenie tabel, czyszczenie i sortowanie danych
+
+#### Biblioteki pomocnicze
+- `tqdm` – wyświetlanie paska postępu przetwarzania
+- `datetime` – obsługa dat i czasów (standardowa biblioteka)
+- `json` – odczyt i zapis danych w formacie JSON (standardowa biblioteka)
+- `concurrent.futures` – równoległe przetwarzanie wątków (ThreadPoolExecutor, standardowa biblioteka)
+
+#### Do zapisu wyników
+- `xlsxwriter` lub `openpyxl` – eksport do Excela (`.xlsx`)
