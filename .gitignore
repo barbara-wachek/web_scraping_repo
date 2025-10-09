@@ -11,3 +11,4 @@ geckodriver.exe
 geckodriver.log
 .ipynb_checkpoints/
 .virtual_documents/
+web_scraping_env
