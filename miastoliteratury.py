@@ -1,5 +1,17 @@
-from scrapegraphai.graphs import SmartScraperGraph
+# from scrapegraphai.graphs import SmartScraperGraph
+# import pandas as pd
+
+import requests
+from bs4 import BeautifulSoup
 import pandas as pd
+import regex as re
+import time
+from tqdm import tqdm  #licznik
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+import json
+from functions import date_change_format_short
+
 
 #%% ustawienia
 sitemap_url = "https://miastoliteratury.com/sitemap_index.xml"
